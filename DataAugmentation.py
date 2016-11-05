@@ -37,12 +37,22 @@ def getImagesFromDir(imageDir, imageSize=[640, 700, 3]):
         img = imread(path)
         imageMat[i,:,:,:] = img
         i=i+1
-    return imageMat
+    return imageMat / 255
 
+def gammaColorChannels(imageMat, R=True, G=True, B=True):
+    if R:
+        imageMat[:,:,:,0] = np.power(imageMat[:,:,:,0],(2.2))
+    if G:
+        imageMat[:, :, :, 1] = np.power(imageMat[:, :, :, 1], (2.2))
+    if B:
+        imageMat[:, :, :, 2] = np.power(imageMat[:, :, :, 2], (2.2))
 
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir)
     visualizeImages(imageMat, fileName="orig.png")
+    gammaColorChannels(imageMat)
+    visualizeImages(imageMat, fileName="gamma2.png")
+
 
 
