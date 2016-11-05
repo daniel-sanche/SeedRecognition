@@ -47,12 +47,33 @@ def gammaColorChannels(imageMat, R=True, G=True, B=True):
     if B:
         imageMat[:, :, :, 2] = np.power(imageMat[:, :, :, 2], (2.2))
 
+def makeGaussian(size=100, radius=50, center=None):
+    x = np.arange(0, size, 1, float)
+    y = x[:,np.newaxis]
+
+    if center is None:
+        x0 = y0 = size // 2
+    else:
+        x0 = center[0]
+        y0 = center[1]
+    return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / radius**2)
+
+def addLighting(imageMat, center=None):
+    largerSide = max(imageMat.shape[1], imageMat.shape[2])
+    grad = makeGaussian(largerSide, radius=largerSide*1.1, center=center)
+    grad = imresize(grad, [imageMat.shape[1], imageMat.shape[2]])
+    grad = np.tile(grad, (3,1,1)).transpose(1,2,0)
+    imageMat[:,:,:,:] = imageMat * grad
+
+
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir)
-    visualizeImages(imageMat, fileName="orig.png")
-    gammaColorChannels(imageMat)
-    visualizeImages(imageMat, fileName="gamma2.png")
+    #visualizeImages(imageMat, fileName="orig.png")
+    #gammaColorChannels(imageMat)
+    addLighting(imageMat)
+    visualizeImages(imageMat, fileName="gradient_seeds.png")
+
 
 
 
