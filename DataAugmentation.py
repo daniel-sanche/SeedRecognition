@@ -58,12 +58,16 @@ def makeGaussian(size=100, radius=50, center=None):
         y0 = center[1]
     return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / radius**2)
 
-def addLighting(imageMat, center=None):
+def addLighting(imageMat, radPercent=1.1, center=None):
     largerSide = max(imageMat.shape[1], imageMat.shape[2])
-    grad = makeGaussian(largerSide, radius=largerSide*1.1, center=center)
+    grad = makeGaussian(largerSide, radius=largerSide*radPercent, center=center)
     grad = imresize(grad, [imageMat.shape[1], imageMat.shape[2]])
     grad = np.tile(grad, (3,1,1)).transpose(1,2,0)
-    imageMat[:,:,:,:] = imageMat * grad
+    return imageMat * grad
+
+def addGausianNoise(imageMat, mean=0, std=0.1):
+    noise = np.random.normal(mean, std, [imageMat.shape[1], imageMat.shape[2], imageMat.shape[3]])
+    return imageMat + noise
 
 
 if __name__ == "__main__":
@@ -71,8 +75,8 @@ if __name__ == "__main__":
     imageMat = getImagesFromDir(imageDir)
     #visualizeImages(imageMat, fileName="orig.png")
     #gammaColorChannels(imageMat)
-    addLighting(imageMat)
-    visualizeImages(imageMat, fileName="gradient_seeds.png")
+    imageMat = addGausianNoise(imageMat)
+    visualizeImages(imageMat, fileName="noisy_seeds.png")
 
 
 
