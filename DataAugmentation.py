@@ -2,7 +2,7 @@ import os
 import numpy as np
 from scipy.misc import imread, imsave, imresize
 from skimage import exposure
-from scipy.ndimage import rotate
+from scipy.ndimage import rotate, interpolation
 
 """
 combines a portion of the imageMat ino an image file that can be displayed
@@ -176,7 +176,7 @@ def rotateImage(imageMat, rotationPercent=0.5):
 Mirrors the image left/right or up/down
 
 Params:
-    imageMat:   the set of images to mirror
+    imageMat:   the numpy array of images to mirror
     mirrorLR:   a bool indicating whether to mirror the image left/right
     mirrorUD:   a bool indicating whether to mirror the image up/down
 
@@ -192,11 +192,37 @@ def mirrorImage(imageMat, mirrorLR=True, mirrorUD=True):
         resultMat = resultMat[:,:,::-1]
     return resultMat
 
+"""
+Makes the seed appear smaller in the image, to simulate phots taken at different distances
+The returned images will be the same size, but the seed will be smaller
+Accomplished by adding padding to the original image, and then resizing to the proper size
+
+Params:
+    imageMat:   the numpy array of images to shrink
+    padPercent: the amount of padding to apply relative to the size of the original image
+                should be a value > 0
+                ex: 1 = the image will be shrunk to half it's size, because equal padding is added
+
+Returns:
+    0:  a numpy array consisting of imageMat with the seeds shrunk
+"""
+def shrinkSeed(imageMat, padPercent=1):
+    if padPercent <= 0:
+        return np.array(imageMat)
+    #pad the seed image, then resize to make seed appear smaller
+    padValWidth = int(round((imageMat.shape[1] * padPercent)/2))
+    padValHeight = int(round((imageMat.shape[2] * padPercent) / 2))
+    print((padValWidth, padValHeight))
+    resultMat = np.lib.pad(imageMat, ((0,0), (padValWidth, padValWidth), (padValHeight, padValHeight), (0,0)), mode="edge")
+    resultMat = interpolation.zoom(resultMat, [1, imageMat.shape[1]/resultMat.shape[1], imageMat.shape[2]/resultMat.shape[2], 1])
+    print(resultMat.shape)
+    return resultMat[:,:imageMat.shape[1],:imageMat.shape[2],:]
+
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
-    imageMat = mirrorImage(imageMat, mirrorLR=True, mirrorUD=True)
-    visualizeImages(imageMat, fileName="mirrored.png")
+    imageMat = shrinkSeed(imageMat, padPercent=1.8)
+    visualizeImages(imageMat, fileName="smaller.png")
 
 
 
