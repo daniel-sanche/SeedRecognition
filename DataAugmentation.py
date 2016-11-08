@@ -136,8 +136,8 @@ Params:
 Returns:
     0:  a numpy array consisting of imageMat with gaussian noise added
 """
-def addGausianNoise(imageMat, mean=0, std=0.1):
-    noise = np.random.normal(mean, std, [imageMat.shape[1], imageMat.shape[2], imageMat.shape[3]])
+def addGausianNoise(imageMat, mean=0, std=0.05):
+    noise = np.random.normal(mean, std, imageMat.shape)
     return imageMat + noise
 
 
@@ -254,9 +254,9 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5):
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
-    imageMat = translate(imageMat, xDelta=0.5, yDelta=-0.5)
+    imageMat = addGausianNoise(imageMat)
     print(imageMat.shape)
-    visualizeImages(imageMat, fileName="translated.png")
+    visualizeImages(imageMat, fileName="noisy.png")
 
 
 
