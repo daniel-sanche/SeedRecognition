@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from scipy.misc import imread, imsave, imresize
+from skimage import exposure
 
 def visualizeImages(imageMat, numRows=5, numCols=10, fileName="images.png", maxImgSize=64):
     imageSize = [imageMat.shape[1], imageMat.shape[2], imageMat.shape[3]]
@@ -35,6 +36,7 @@ def getImagesFromDir(imageDir, imageSize=[640, 700, 3]):
     i=0
     for path in pathList:
         img = imread(path)
+        img = imresize(img, imageSize)
         imageMat[i,:,:,:] = img
         i=i+1
     return imageMat / 255
@@ -69,14 +71,16 @@ def addGausianNoise(imageMat, mean=0, std=0.1):
     noise = np.random.normal(mean, std, [imageMat.shape[1], imageMat.shape[2], imageMat.shape[3]])
     return imageMat + noise
 
+def adjustContrast(imageMat, minIntensity=0, maxIntensity=1):
+    return exposure.rescale_intensity(imageMat, (minIntensity, maxIntensity))
 
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
-    imageMat = getImagesFromDir(imageDir)
+    imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
     #visualizeImages(imageMat, fileName="orig.png")
     #gammaColorChannels(imageMat)
-    imageMat = addGausianNoise(imageMat)
-    visualizeImages(imageMat, fileName="noisy_seeds.png")
+    imageMat = adjustContrast(imageMat, 0.2, 0.8)
+    visualizeImages(imageMat, fileName="dark_seeds.png")
 
 
 
