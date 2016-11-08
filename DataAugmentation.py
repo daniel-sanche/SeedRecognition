@@ -172,13 +172,31 @@ Returns:
 def rotateImage(imageMat, rotationPercent=0.5):
     return rotate(imageMat, rotationPercent*360, axes=[1,2], reshape=False, mode="nearest")
 
+"""
+Mirrors the image left/right or up/down
+
+Params:
+    imageMat:   the set of images to mirror
+    mirrorLR:   a bool indicating whether to mirror the image left/right
+    mirrorUD:   a bool indicating whether to mirror the image up/down
+
+Returns:
+    0:  a numpy array consisting of imageMat mirrored in the requested directions
+"""
+def mirrorImage(imageMat, mirrorLR=True, mirrorUD=True):
+    if mirrorUD:
+        resultMat = imageMat[:,::-1,:]
+    else:
+        resultMat = np.array(imageMat)
+    if mirrorLR:
+        resultMat = resultMat[:,:,::-1]
+    return resultMat
+
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
-    #visualizeImages(imageMat, fileName="orig.png")
-    #gammaColorChannels(imageMat)
-    imageMat = rotateImage(imageMat, 0.1)
-    visualizeImages(imageMat, fileName="rotated.png")
+    imageMat = mirrorImage(imageMat, mirrorLR=True, mirrorUD=True)
+    visualizeImages(imageMat, fileName="mirrored.png")
 
 
 
