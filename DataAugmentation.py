@@ -193,7 +193,7 @@ def mirrorImage(imageMat, mirrorLR=True, mirrorUD=True):
     return resultMat
 
 """
-Makes the seed appear smaller in the image, to simulate phots taken at different distances
+Shinks the size of the seed in the image, to simulate phots taken at different distances
 The returned images will be the same size, but the seed will be smaller
 Accomplished by adding padding to the original image, and then resizing to the proper size
 
@@ -212,17 +212,51 @@ def shrinkSeed(imageMat, padPercent=1):
     #pad the seed image, then resize to make seed appear smaller
     padValWidth = int(round((imageMat.shape[1] * padPercent)/2))
     padValHeight = int(round((imageMat.shape[2] * padPercent) / 2))
-    print((padValWidth, padValHeight))
     resultMat = np.lib.pad(imageMat, ((0,0), (padValWidth, padValWidth), (padValHeight, padValHeight), (0,0)), mode="edge")
     resultMat = interpolation.zoom(resultMat, [1, imageMat.shape[1]/resultMat.shape[1], imageMat.shape[2]/resultMat.shape[2], 1])
-    print(resultMat.shape)
     return resultMat[:,:imageMat.shape[1],:imageMat.shape[2],:]
+
+"""
+Translates the image
+
+Params:
+    imageMat:   the numpy array of images to translate
+    xDelta:     the new position for the x center of the image
+                -1 specifies the left edge, 1 specifies the right edge
+                the old center point will be moved to this position on the image window
+    yDelta:     the new position for the y center of the image
+                -1 specifies the bottom edge, 1 specifies the top edge
+                the old center point will be moved to this position on the image window
+
+Returns:
+    0:    a numpy array consisting of imageMat with the seeds translated
+"""
+def translate(imageMat, xDelta=0.5, yDelta=0.5):
+    #add padding to shift the center point
+    xVal = int(round((imageMat.shape[1] * abs(xDelta))))
+    yVal = int(round((imageMat.shape[2] * abs(yDelta))))
+    print((xVal, yVal))
+    if xDelta > 0:
+        xPad = (xVal, 0)
+    else:
+        xPad = (0, xVal)
+    if yDelta > 0:
+        yPad = (0, yVal)
+    else:
+        yPad = (yVal, 0)
+    resultMat = np.lib.pad(imageMat, ((0, 0), yPad, xPad, (0, 0)), mode="edge")
+    xMin = int(round((resultMat.shape[1]/2) - (imageMat.shape[1]/2)))
+    xMax = xMin + imageMat.shape[1]
+    yMin = int(round((resultMat.shape[2]/2) - (imageMat.shape[2]/2)))
+    yMax = yMin + imageMat.shape[2]
+    return resultMat[:,xMin:xMax, yMin:yMax,:]
 
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
-    imageMat = shrinkSeed(imageMat, padPercent=1.8)
-    visualizeImages(imageMat, fileName="smaller.png")
+    imageMat = translate(imageMat, xDelta=0.5, yDelta=-0.5)
+    print(imageMat.shape)
+    visualizeImages(imageMat, fileName="translated.png")
 
 
 
