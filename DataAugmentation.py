@@ -2,6 +2,7 @@ import os
 import numpy as np
 from scipy.misc import imread, imsave, imresize
 from skimage import exposure
+from scipy.ndimage import rotate
 
 """
 combines a portion of the imageMat ino an image file that can be displayed
@@ -149,20 +150,35 @@ Params:
     range:          the range of values on either side of the mean
 
 Returns:
-    0:  a numpu array consisting of imageMat scaled to the new intensity values
+    0:  a numpy array consisting of imageMat scaled to the new intensity values
 """
 def adjustContrast(imageMat, meanIntensity=0.5, range=0.5):
     minIntensity = max(meanIntensity - range, 0)
     maxIntensity = min(meanIntensity + range, 1)
     return exposure.rescale_intensity(imageMat, (minIntensity, maxIntensity))
 
+"""
+Rotates the set of input images
+Fills in blank region with the nearest neighbour pixels, to retain consistent background
+
+Params:
+    imageMat:   the set of images to rotate
+    rotationPercent:    the percent we want to rotate the image.
+                        Will be multiplied by 360 to determine the number of degrees
+
+Returns:
+    0:  a numpy array consisting of imageMat rotated by rotationPercent*360 degrees
+"""
+def rotateImage(imageMat, rotationPercent=0.5):
+    return rotate(imageMat, rotationPercent*360, axes=[1,2], reshape=False, mode="nearest")
+
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
     #visualizeImages(imageMat, fileName="orig.png")
     #gammaColorChannels(imageMat)
-    imageMat = adjustContrast(imageMat, 0.7, 0.5)
-    visualizeImages(imageMat, fileName="dark_seeds.png")
+    imageMat = rotateImage(imageMat, 0.1)
+    visualizeImages(imageMat, fileName="rotated.png")
 
 
 
