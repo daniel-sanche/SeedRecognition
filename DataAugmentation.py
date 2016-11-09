@@ -117,7 +117,7 @@ Params:
     centerX:    the x point of the center of the image, relative to the image frame
                 -1 specifies the left edge, 1 specifies the right edge
     centerY:    the y point of the center of the image, relative to the image frame
-                -1 specifies the bottom edge, 1 specifies the top edge
+                -1 specifies the top edge, 1 specifies the bottom edge
 
 Returns:
     0:  a numpy array consisting of imageMat with a graidnet mask applied to simulate a light source
@@ -242,7 +242,6 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5):
     #add padding to shift the center point
     xVal = int(round((imageMat.shape[1] * abs(xDelta))))
     yVal = int(round((imageMat.shape[2] * abs(yDelta))))
-    print((xVal, yVal))
     if xDelta > 0:
         xPad = (xVal, 0)
     else:
@@ -259,7 +258,7 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5):
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
 
-def generateImages(baseImages,
+def generateImages(baseImages, seed=None,
                    numRotations=4, rotationRange=[0,1],
                    numContrast=5, contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
                    rGammaProb=0.3, gGammaProb=0.5, bGammaProb=0.5,
@@ -267,6 +266,11 @@ def generateImages(baseImages,
                    numDifferentTranslations=5, translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
                    numLighting=4, lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5],lightingYRange=[-0.5,0.5],
                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
+    if seed is None:
+        seed = int(random.random() * 1000000000000)
+        print ("seed used: " + str(seed))
+    random.seed(seed)
+
     #add mirrored versions to the base images
     baseImages = np.concatenate((baseImages, mirrorImage(baseImages, True, True),
                                  mirrorImage(baseImages, False, True), mirrorImage(baseImages, True, False)), axis=0)
@@ -346,7 +350,7 @@ def generateImages(baseImages,
 
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
-    imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
+    imageMat = getImagesFromDir(imageDir, imageSize=[64, 64, 3])
     imageMat = generateImages(imageMat)
     print(imageMat.shape)
     visualizeImages(imageMat, fileName="generated.png")
