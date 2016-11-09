@@ -261,9 +261,9 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5):
 
 def generateImages(baseImages,
                    numRotations=4, rotationRange=[0,1],
-                   contrastProb=0.5, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
-                   rGammaProb=0.5, gGammaProb=0.5, bGammaProb=0.5,
-                   shrinkProb=0.5, shrinkRange=[0.5, 1],
+                   numContrast=5, contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
+                   rGammaProb=0.3, gGammaProb=0.5, bGammaProb=0.5,
+                   shrinkProb=0.3, shrinkRange=[0.5, 1],
                    numDifferentTranslations=5, translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
                    numLighting=4, lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5],lightingYRange=[-0.5,0.5],
                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
@@ -281,9 +281,13 @@ def generateImages(baseImages,
 
     #adjust contrast in subset of images
     subset = imageMat[:int(imageMat.shape[0]*contrastProb),:,:,:]
-    result = adjustContrast(subset, meanIntensity=random.uniform(contrastMeanRange[0], contrastMeanRange[1]),
+    batches = np.array_split(subset, numContrast)
+    imageSet = [baseImages]
+    for batch in batches:
+        result = adjustContrast(batch, meanIntensity=random.uniform(contrastMeanRange[0], contrastMeanRange[1]),
                                     spread=random.uniform(contrastSpreadRange[0], contrastSpreadRange[1]))
-    baseImages = np.concatenate((baseImages, result))
+        imageSet += [result]
+    baseImages = np.concatenate(imageSet)
     #shuffle so contrast images are mixed in with others
     np.random.shuffle(baseImages)
 
