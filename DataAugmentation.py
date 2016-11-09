@@ -265,7 +265,7 @@ def generateImages(baseImages,
                    rGammaProb=0.5, gGammaProb=0.5, bGammaProb=0.5,
                    shrinkProb=0.5, shrinkRange=[0.5, 1],
                    numDifferentTranslations=5, translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
-                   numLighting=4, lightingProb=0.3, lightingRadRange=[0.8, 1.3], lightingXRange=[-1,1],lightingYRange=[-1,1],
+                   numLighting=4, lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5],lightingYRange=[-0.5,0.5],
                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
     #add mirrored versions to the base images
     baseImages = np.concatenate((baseImages, mirrorImage(baseImages, True, True),
@@ -309,7 +309,7 @@ def generateImages(baseImages,
 
     #translate in subset of images
     subset = imageMat[:int(imageMat.shape[0] * translateProb), :, :, :]
-    batches = np.split(subset, numDifferentTranslations)
+    batches = np.array_split(subset, numDifferentTranslations)
     imageSet = [baseImages]
     for batch in batches:
         result = translate(batch, xDelta=random.uniform(translateXRange[0], translateXRange[1]),
@@ -320,7 +320,7 @@ def generateImages(baseImages,
 
     #add lighting to a subset of images
     subset = imageMat[:int(imageMat.shape[0] * lightingProb), :, :, :]
-    batches = np.split(subset, numLighting)
+    batches = np.array_split(subset, numLighting)
     imageSet = [baseImages]
     for batch in batches:
         result = addLighting(batch, radPercent=random.uniform(lightingRadRange[0], lightingRadRange[1]),
@@ -344,6 +344,7 @@ if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
     imageMat = generateImages(imageMat)
+    print(imageMat.shape)
     visualizeImages(imageMat, fileName="generated.png")
 
 
