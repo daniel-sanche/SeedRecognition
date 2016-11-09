@@ -267,9 +267,10 @@ def generateImages(baseImages, seed=None,
                    numLighting=4, lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5],lightingYRange=[-0.5,0.5],
                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
     if seed is None:
-        seed = int(random.random() * 1000000000000)
+        seed = int(random.random() * 4000000000)
         print ("seed used: " + str(seed))
     random.seed(seed)
+    np.random.seed(seed)
 
     #add mirrored versions to the base images
     baseImages = np.concatenate((baseImages, mirrorImage(baseImages, True, True),
@@ -351,7 +352,7 @@ def generateImages(baseImages, seed=None,
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[64, 64, 3])
-    imageMat = generateImages(imageMat)
+    imageMat = generateImages(imageMat, seed=923579038)
     print(imageMat.shape)
     visualizeImages(imageMat, fileName="generated.png")
 
