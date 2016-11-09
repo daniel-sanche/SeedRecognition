@@ -3,6 +3,7 @@ import numpy as np
 from scipy.misc import imread, imsave, imresize
 from skimage import exposure
 from scipy.ndimage import rotate, interpolation
+import random
 
 """
 combines a portion of the imageMat ino an image file that can be displayed
@@ -113,14 +114,20 @@ Params:
     imageMat:   the numpy array of images to add lighting to
     radPercent: the size of the radius of the light, in relation to the size of the image
                 larger radi are preferred to avoid excessive vignette effect
-    center:     the center point of the simulated light on the image
+    centerX:    the x point of the center of the image, relative to the image frame
+                -1 specifies the left edge, 1 specifies the right edge
+    centerY:    the y point of the center of the image, relative to the image frame
+                -1 specifies the bottom edge, 1 specifies the top edge
 
 Returns:
     0:  a numpy array consisting of imageMat with a graidnet mask applied to simulate a light source
 """
-def addLighting(imageMat, radPercent=1.1, center=None):
+def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0):
     largerSide = max(imageMat.shape[1], imageMat.shape[2])
-    grad = _makeGradMask(largerSide, radius=largerSide * radPercent, center=center)
+    half = int(largerSide/2)
+    xCenter = (half * centerX) + half
+    yCenter = (half * centerY) + half
+    grad = _makeGradMask(largerSide, radius=largerSide * radPercent, center=[xCenter, yCenter])
     grad = imresize(grad, [imageMat.shape[1], imageMat.shape[2]])
     grad = np.tile(grad, (3,1,1)).transpose(1,2,0)
     return imageMat * grad
@@ -147,14 +154,14 @@ Adjusts the contrast values for a set of images
 Params:
     imageMat:       the input numpy array of images
     meanIntensity:  the new mean intensity value
-    range:          the range of values on either side of the mean
+    spread:          the range of values on either side of the mean
 
 Returns:
     0:  a numpy array consisting of imageMat scaled to the new intensity values
 """
-def adjustContrast(imageMat, meanIntensity=0.5, range=0.5):
-    minIntensity = max(meanIntensity - range, 0)
-    maxIntensity = min(meanIntensity + range, 1)
+def adjustContrast(imageMat, meanIntensity=0.5, spread=0.5):
+    minIntensity = max(meanIntensity - spread, 0)
+    maxIntensity = min(meanIntensity + spread, 1)
     return exposure.rescale_intensity(imageMat, (minIntensity, maxIntensity))
 
 """
@@ -251,12 +258,93 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5):
     yMax = yMin + imageMat.shape[2]
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
+
+def generateImages(baseImages,
+                   numRotations=4, rotationRange=[0,1],
+                   contrastProb=0.5, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
+                   rGammaProb=0.5, gGammaProb=0.5, bGammaProb=0.5,
+                   shrinkProb=0.5, shrinkRange=[0.5, 1],
+                   numDifferentTranslations=5, translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
+                   numLighting=4, lightingProb=0.3, lightingRadRange=[0.8, 1.3], lightingXRange=[-1,1],lightingYRange=[-1,1],
+                   noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
+    #add mirrored versions to the base images
+    baseImages = np.concatenate((baseImages, mirrorImage(baseImages, True, True),
+                                 mirrorImage(baseImages, False, True), mirrorImage(baseImages, True, False)), axis=0)
+    #assign random rotations to the base images
+    imageSet = [baseImages]
+    for i in range(numRotations):
+        rotations = rotateImage(baseImages, random.uniform(rotationRange[0], rotationRange[1]))
+        imageSet += [rotations]
+    baseImages = np.concatenate(imageSet)
+    #randomize
+    np.random.shuffle(baseImages)
+
+    #adjust contrast in subset of images
+    subset = imageMat[:int(imageMat.shape[0]*contrastProb),:,:,:]
+    result = adjustContrast(subset, meanIntensity=random.uniform(contrastMeanRange[0], contrastMeanRange[1]),
+                                    spread=random.uniform(contrastSpreadRange[0], contrastSpreadRange[1]))
+    baseImages = np.concatenate((baseImages, result))
+    #shuffle so contrast images are mixed in with others
+    np.random.shuffle(baseImages)
+
+    #adjust color channels in subset of images
+    subset = imageMat[:int(imageMat.shape[0]*rGammaProb),:,:,:]
+    result = gammaColorChannels(subset, R=True, G=False, B=False)
+    baseImages = np.concatenate((baseImages, result))
+    np.random.shuffle(baseImages)
+    subset = imageMat[:int(imageMat.shape[0]*gGammaProb),:,:,:]
+    result = gammaColorChannels(subset, R=False, G=True, B=False)
+    baseImages = np.concatenate((baseImages, result))
+    np.random.shuffle(baseImages)
+    subset = imageMat[:int(imageMat.shape[0]*bGammaProb),:,:,:]
+    result = gammaColorChannels(subset, R=False, G=False, B=True)
+    baseImages = np.concatenate((baseImages, result))
+    np.random.shuffle(baseImages)
+
+    #adjust scale in subset of images
+    subset = imageMat[:int(imageMat.shape[0] * shrinkProb), :, :, :]
+    result = shrinkSeed(subset, random.uniform(shrinkRange[0], shrinkRange[1]))
+    baseImages = np.concatenate((baseImages, result))
+    np.random.shuffle(baseImages)
+
+    #translate in subset of images
+    subset = imageMat[:int(imageMat.shape[0] * translateProb), :, :, :]
+    batches = np.split(subset, numDifferentTranslations)
+    imageSet = [baseImages]
+    for batch in batches:
+        result = translate(batch, xDelta=random.uniform(translateXRange[0], translateXRange[1]),
+                           yDelta=random.uniform(translateYRange[0], translateYRange[1]))
+        imageSet += [result]
+    baseImages = np.concatenate(imageSet)
+    np.random.shuffle(baseImages)
+
+    #add lighting to a subset of images
+    subset = imageMat[:int(imageMat.shape[0] * lightingProb), :, :, :]
+    batches = np.split(subset, numLighting)
+    imageSet = [baseImages]
+    for batch in batches:
+        result = addLighting(batch, radPercent=random.uniform(lightingRadRange[0], lightingRadRange[1]),
+                             centerX=random.uniform(lightingXRange[0], lightingXRange[1]),
+                             centerY=random.uniform(lightingYRange[0], lightingYRange[1]))
+        imageSet += [result]
+    baseImages = np.concatenate(imageSet)
+    np.random.shuffle(baseImages)
+
+    #add noise to subset of images
+    subset = imageMat[:int(imageMat.shape[0] * noiseProb), :, :, :]
+    result = addGausianNoise(subset, mean=random.uniform(noiseMeanRange[0], noiseMeanRange[1]),
+                             std=random.uniform(noiseStdRange[0], noiseStdRange[1]))
+    baseImages = np.concatenate((baseImages, result))
+    np.random.shuffle(baseImages)
+
+    return baseImages
+
+
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[100, 100, 3])
-    imageMat = addGausianNoise(imageMat)
-    print(imageMat.shape)
-    visualizeImages(imageMat, fileName="noisy.png")
+    imageMat = generateImages(imageMat)
+    visualizeImages(imageMat, fileName="generated.png")
 
 
 
