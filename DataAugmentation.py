@@ -128,7 +128,7 @@ def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0):
     xCenter = (half * centerX) + half
     yCenter = (half * centerY) + half
     grad = _makeGradMask(largerSide, radius=largerSide * radPercent, center=[xCenter, yCenter])
-    grad = imresize(grad, [imageMat.shape[1], imageMat.shape[2]])
+    grad = imresize(grad, [imageMat.shape[1], imageMat.shape[2]]) / 255
     grad = np.tile(grad, (3,1,1)).transpose(1,2,0)
     return imageMat * grad
 
