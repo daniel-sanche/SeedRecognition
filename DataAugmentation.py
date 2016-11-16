@@ -264,7 +264,7 @@ def generateImages(baseImages, seed=None,
                    rGammaProb=0.3, gGammaProb=0.5, bGammaProb=0.5,
                    shrinkProb=0.3, shrinkRange=[0.5, 1],
                    numDifferentTranslations=5, translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
-                   numLighting=4, lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5],lightingYRange=[-0.5,0.5],
+                   numLighting=0, lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5],lightingYRange=[-0.5,0.5],
                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
     if seed is None:
         seed = int(random.random() * 4000000000)
@@ -285,16 +285,17 @@ def generateImages(baseImages, seed=None,
     np.random.shuffle(baseImages)
 
     #adjust contrast in subset of images
-    subset = imageMat[:int(imageMat.shape[0]*contrastProb),:,:,:]
-    batches = np.array_split(subset, numContrast)
-    imageSet = [baseImages]
-    for batch in batches:
-        result = adjustContrast(batch, meanIntensity=random.uniform(contrastMeanRange[0], contrastMeanRange[1]),
-                                    spread=random.uniform(contrastSpreadRange[0], contrastSpreadRange[1]))
-        imageSet += [result]
-    baseImages = np.concatenate(imageSet)
-    #shuffle so contrast images are mixed in with others
-    np.random.shuffle(baseImages)
+    if numContrast > 0:
+        subset = imageMat[:int(imageMat.shape[0]*contrastProb),:,:,:]
+        batches = np.array_split(subset, numContrast)
+        imageSet = [baseImages]
+        for batch in batches:
+            result = adjustContrast(batch, meanIntensity=random.uniform(contrastMeanRange[0], contrastMeanRange[1]),
+                                        spread=random.uniform(contrastSpreadRange[0], contrastSpreadRange[1]))
+            imageSet += [result]
+        baseImages = np.concatenate(imageSet)
+        #shuffle so contrast images are mixed in with others
+        np.random.shuffle(baseImages)
 
     #adjust color channels in subset of images
     subset = imageMat[:int(imageMat.shape[0]*rGammaProb),:,:,:]
@@ -317,27 +318,29 @@ def generateImages(baseImages, seed=None,
     np.random.shuffle(baseImages)
 
     #translate in subset of images
-    subset = imageMat[:int(imageMat.shape[0] * translateProb), :, :, :]
-    batches = np.array_split(subset, numDifferentTranslations)
-    imageSet = [baseImages]
-    for batch in batches:
-        result = translate(batch, xDelta=random.uniform(translateXRange[0], translateXRange[1]),
-                           yDelta=random.uniform(translateYRange[0], translateYRange[1]))
-        imageSet += [result]
-    baseImages = np.concatenate(imageSet)
-    np.random.shuffle(baseImages)
+    if numDifferentTranslations > 0:
+        subset = imageMat[:int(imageMat.shape[0] * translateProb), :, :, :]
+        batches = np.array_split(subset, numDifferentTranslations)
+        imageSet = [baseImages]
+        for batch in batches:
+            result = translate(batch, xDelta=random.uniform(translateXRange[0], translateXRange[1]),
+                               yDelta=random.uniform(translateYRange[0], translateYRange[1]))
+            imageSet += [result]
+        baseImages = np.concatenate(imageSet)
+        np.random.shuffle(baseImages)
 
     #add lighting to a subset of images
-    subset = imageMat[:int(imageMat.shape[0] * lightingProb), :, :, :]
-    batches = np.array_split(subset, numLighting)
-    imageSet = [baseImages]
-    for batch in batches:
-        result = addLighting(batch, radPercent=random.uniform(lightingRadRange[0], lightingRadRange[1]),
-                             centerX=random.uniform(lightingXRange[0], lightingXRange[1]),
-                             centerY=random.uniform(lightingYRange[0], lightingYRange[1]))
-        imageSet += [result]
-    baseImages = np.concatenate(imageSet)
-    np.random.shuffle(baseImages)
+    if numLighting > 0:
+        subset = imageMat[:int(imageMat.shape[0] * lightingProb), :, :, :]
+        batches = np.array_split(subset, numLighting)
+        imageSet = [baseImages]
+        for batch in batches:
+            result = addLighting(batch, radPercent=random.uniform(lightingRadRange[0], lightingRadRange[1]),
+                                 centerX=random.uniform(lightingXRange[0], lightingXRange[1]),
+                                 centerY=random.uniform(lightingYRange[0], lightingYRange[1]))
+            imageSet += [result]
+        baseImages = np.concatenate(imageSet)
+        np.random.shuffle(baseImages)
 
     #add noise to subset of images
     subset = imageMat[:int(imageMat.shape[0] * noiseProb), :, :, :]
@@ -352,9 +355,10 @@ def generateImages(baseImages, seed=None,
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[64, 64, 3])
-    imageMat = generateImages(imageMat, seed=923579038)
+    #imageMat = generateImages(imageMat, seed=923579038)
+    imageMat = generateImages(imageMat)
     print(imageMat.shape)
-    visualizeImages(imageMat, fileName="generated.png")
+    visualizeImages(imageMat, fileName="generated.png", numRows=20, numCols=20)
 
 
 
