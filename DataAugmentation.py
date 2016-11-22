@@ -357,7 +357,6 @@ def generateImages(baseImages, seed=None,
 if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[64, 64, 3])
-    #imageMat = generateImages(imageMat, seed=923579038)
     imageMat = generateImages(imageMat)
     print(imageMat.shape)
     visualizeImages(imageMat, fileName="generated.png", numRows=20, numCols=20)
