@@ -135,7 +135,7 @@ Returns:
 """
 def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0, logDict=None):
     if logDict is not None:
-        logDict["LightingCenter"] = "(" + str(centerX) + "," + str(centerY) + ")"
+        logDict["LightingCenter"] = "(" + "{:.3f}".format(centerX) + "," + "{:.3f}".format(centerY) + ")"
         logDict["LightingRadius"] = radPercent
 
     largerSide = max(imageMat.shape[1], imageMat.shape[2])
@@ -280,7 +280,7 @@ Returns:
 """
 def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     if logDict is not None:
-        logDict["TranslateDelta"] = "(" + str(xDelta) + "," + str(yDelta) + ")"
+        logDict["TranslateDelta"] = "(" + "{:.3f}".format(xDelta) + "," + "{:.3f}".format(yDelta) + ")"
 
     #add padding to shift the center point
     xVal = int(round((imageMat.shape[1] * abs(xDelta))))
@@ -391,19 +391,19 @@ def ModifyImageBatch(imgBatch, seed=None,
         imgBatch[i,:,:,:] = newImg
         loglist += [logs]
         seed = seed + 1
-    return imgBatch, loglist
+    df = pd.DataFrame(loglist)
+    return imgBatch, df
 
 
 
 if __name__ == "__main__":
+    pd.set_option('expand_frame_repr', False)
     imageSize = 64
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[imageSize, imageSize, 3])
     print(imageMat.shape)
-    imageMat, logs = ModifyImageBatch(imageMat)
-    print(imageMat.shape)
-    print(len(logs))
-    print(logs[0])
+    imageMat, logDf = ModifyImageBatch(imageMat)
+    logDf.to_csv("logs.csv")
     visualizeImages(imageMat, fileName="generated.png", numRows=10, numCols=10, maxImgSize=imageSize)
 
 
