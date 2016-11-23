@@ -4,6 +4,7 @@ from scipy.misc import imread, imsave, imresize
 from skimage import exposure
 from scipy.ndimage import rotate, interpolation
 import random
+import pandas as pd
 
 """
 combines a portion of the imageMat ino an image file that can be displayed
@@ -70,11 +71,12 @@ Params:
     R:          indicates whether to adjust the red channel
     G:          indicates whether to adjust the green channel
     B:          indicates whether to adjust the blue channel
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:  a numpy array of the new adjusted images
 """
-def gammaColorChannels(imageMat, R=True, G=True, B=True):
+def gammaColorChannels(imageMat, R=True, G=True, B=True, logDict=None):
     if not R and not G and not B:
         return imageMat
 
@@ -121,11 +123,12 @@ Params:
                 -1 specifies the left edge, 1 specifies the right edge
     centerY:    the y point of the center of the image, relative to the image frame
                 -1 specifies the top edge, 1 specifies the bottom edge
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:  a numpy array consisting of imageMat with a graidnet mask applied to simulate a light source
 """
-def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0):
+def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0, logDict=None):
     largerSide = max(imageMat.shape[1], imageMat.shape[2])
     half = int(largerSide/2)
     xCenter = (half * centerX) + half
@@ -142,11 +145,12 @@ Params:
     imageMat:   the numpy array of images to add noise to
     mean:       the mean of the gaussian noise distribution
     std:        the standard deviation of the gaussian noise
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:  a numpy array consisting of imageMat with gaussian noise added
 """
-def addGausianNoise(imageMat, mean=0, std=0.05):
+def addGausianNoise(imageMat, mean=0, std=0.05, logDict=None):
     noise = np.random.normal(mean, std, imageMat.shape)
     return imageMat + noise
 
@@ -158,11 +162,12 @@ Params:
     imageMat:       the input numpy array of images
     meanIntensity:  the new mean intensity value
     spread:          the range of values on either side of the mean
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:  a numpy array consisting of imageMat scaled to the new intensity values
 """
-def adjustContrast(imageMat, meanIntensity=0.5, spread=0.5):
+def adjustContrast(imageMat, meanIntensity=0.5, spread=0.5, logDict=None):
     minIntensity = max(meanIntensity - spread, 0)
     maxIntensity = min(meanIntensity + spread, 1)
     return exposure.rescale_intensity(imageMat, (minIntensity, maxIntensity))
@@ -175,11 +180,12 @@ Params:
     imageMat:   the set of images to rotate
     rotationPercent:    the percent we want to rotate the image.
                         Will be multiplied by 360 to determine the number of degrees
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:  a numpy array consisting of imageMat rotated by rotationPercent*360 degrees
 """
-def rotateImage(imageMat, rotationPercent=0.5):
+def rotateImage(imageMat, rotationPercent=0.5, logDict=None):
     return rotate(imageMat, rotationPercent*360, axes=[1,2], reshape=False, mode="nearest")
 
 """
@@ -189,11 +195,12 @@ Params:
     imageMat:   the numpy array of images to mirror
     mirrorLR:   a bool indicating whether to mirror the image left/right
     mirrorUD:   a bool indicating whether to mirror the image up/down
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:  a numpy array consisting of imageMat mirrored in the requested directions
 """
-def mirrorImage(imageMat, mirrorLR=True, mirrorUD=True):
+def mirrorImage(imageMat, mirrorLR=True, mirrorUD=True, logDict=None):
     if not mirrorLR and not mirrorUD:
         return imageMat
 
@@ -215,11 +222,12 @@ Params:
     padPercent: the amount of padding to apply relative to the size of the original image
                 should be a value > 0
                 ex: 1 = the image will be shrunk to half it's size, because equal padding is added
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:  a numpy array consisting of imageMat with the seeds shrunk
 """
-def shrinkSeed(imageMat, padPercent=1):
+def shrinkSeed(imageMat, padPercent=1, logDict=None):
     if padPercent <= 0:
         return np.array(imageMat)
     #pad the seed image, then resize to make seed appear smaller
@@ -240,11 +248,12 @@ Params:
     yDelta:     the new position for the y center of the image
                 -1 specifies the bottom edge, 1 specifies the top edge
                 the old center point will be moved to this position on the image window
+    logDict:    a dictionary of transformations done on image that we can add to
 
 Returns:
     0:    a numpy array consisting of imageMat with the seeds translated
 """
-def translate(imageMat, xDelta=0.5, yDelta=0.5):
+def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     #add padding to shift the center point
     xVal = int(round((imageMat.shape[1] * abs(xDelta))))
     yVal = int(round((imageMat.shape[2] * abs(yDelta))))
@@ -273,49 +282,58 @@ def ModifyImage(img, seed=None,
                 translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
                 lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
                 noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
+    #set up seed
     if seed is None:
         seed = int(random.random() * 4000000000)
         print ("seed used: " + str(seed))
     random.seed(seed)
     np.random.seed(seed)
 
+    #transform single images into image batches of size 1
     if len(img.shape) == 3:
         img = img.reshape([1, img.shape[0], img.shape[1], img.shape[2]])
 
+    #inisitalize transform dict
+    transformDict = {}
+
     #add mirrored versions to the base images
-    img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb)
+    img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=transformDict)
     #assign random rotations to the base images
     img = rotateImage(img, random.uniform(rotationRange[0], rotationRange[1]))
 
     #adjust contrast in subset of images
     if random.random() < contrastProb:
         img = adjustContrast(img, meanIntensity=random.uniform(contrastMeanRange[0], contrastMeanRange[1]),
-                                         spread=random.uniform(contrastSpreadRange[0], contrastSpreadRange[1]))
+                                         spread=random.uniform(contrastSpreadRange[0], contrastSpreadRange[1]),
+                                        logDict=transformDict)
 
 
     #adjust color channels in subset of images
-    img = gammaColorChannels(img, random.random()<rGammaProb, random.random()<gGammaProb, random.random()<bGammaProb)
+    img = gammaColorChannels(img, random.random()<rGammaProb, random.random()<gGammaProb, random.random()<bGammaProb, logDict=transformDict)
 
     #adjust scale in subset of images
     if random.random() < shrinkProb:
-        img = shrinkSeed(img, random.uniform(shrinkRange[0], shrinkRange[1]))
+        img = shrinkSeed(img, random.uniform(shrinkRange[0], shrinkRange[1]), logDict=transformDict)
 
     #translate in subset of images
     if random.random() < translateProb:
         img = translate(img, xDelta=random.uniform(translateXRange[0], translateXRange[1]),
-                             yDelta=random.uniform(translateYRange[0], translateYRange[1]))
+                             yDelta=random.uniform(translateYRange[0], translateYRange[1]),
+                            logDict=transformDict)
 
     #add lighting to a subset of images
     if random.random() < lightingProb:
         img = addLighting(img, radPercent=random.uniform(lightingRadRange[0], lightingRadRange[1]),
                                  centerX=random.uniform(lightingXRange[0], lightingXRange[1]),
-                                 centerY=random.uniform(lightingYRange[0], lightingYRange[1]))
+                                 centerY=random.uniform(lightingYRange[0], lightingYRange[1]),
+                                 logDict=transformDict)
 
 
     #add noise to subset of images
     if random.random() < noiseProb:
         img = addGausianNoise(img, mean=random.uniform(noiseMeanRange[0], noiseMeanRange[1]),
-                                    std=random.uniform(noiseStdRange[0], noiseStdRange[1]))
+                                    std=random.uniform(noiseStdRange[0], noiseStdRange[1]),
+                                logDict=transformDict)
     return img
 
 
