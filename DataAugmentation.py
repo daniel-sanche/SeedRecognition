@@ -294,10 +294,10 @@ def ModifyImage(img, seed=None,
         img = img.reshape([1, img.shape[0], img.shape[1], img.shape[2]])
 
     #inisitalize transform dict
-    transformDict = {}
+    logDict = {}
 
     #add mirrored versions to the base images
-    img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=transformDict)
+    img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=logDict)
     #assign random rotations to the base images
     img = rotateImage(img, random.uniform(rotationRange[0], rotationRange[1]))
 
@@ -305,36 +305,36 @@ def ModifyImage(img, seed=None,
     if random.random() < contrastProb:
         img = adjustContrast(img, meanIntensity=random.uniform(contrastMeanRange[0], contrastMeanRange[1]),
                                          spread=random.uniform(contrastSpreadRange[0], contrastSpreadRange[1]),
-                                        logDict=transformDict)
+                                        logDict=logDict)
 
 
     #adjust color channels in subset of images
-    img = gammaColorChannels(img, random.random()<rGammaProb, random.random()<gGammaProb, random.random()<bGammaProb, logDict=transformDict)
+    img = gammaColorChannels(img, random.random()<rGammaProb, random.random()<gGammaProb, random.random()<bGammaProb, logDict=logDict)
 
     #adjust scale in subset of images
     if random.random() < shrinkProb:
-        img = shrinkSeed(img, random.uniform(shrinkRange[0], shrinkRange[1]), logDict=transformDict)
+        img = shrinkSeed(img, random.uniform(shrinkRange[0], shrinkRange[1]), logDict=logDict)
 
     #translate in subset of images
     if random.random() < translateProb:
         img = translate(img, xDelta=random.uniform(translateXRange[0], translateXRange[1]),
                              yDelta=random.uniform(translateYRange[0], translateYRange[1]),
-                            logDict=transformDict)
+                            logDict=logDict)
 
     #add lighting to a subset of images
     if random.random() < lightingProb:
         img = addLighting(img, radPercent=random.uniform(lightingRadRange[0], lightingRadRange[1]),
                                  centerX=random.uniform(lightingXRange[0], lightingXRange[1]),
                                  centerY=random.uniform(lightingYRange[0], lightingYRange[1]),
-                                 logDict=transformDict)
+                                 logDict=logDict)
 
 
     #add noise to subset of images
     if random.random() < noiseProb:
         img = addGausianNoise(img, mean=random.uniform(noiseMeanRange[0], noiseMeanRange[1]),
                                     std=random.uniform(noiseStdRange[0], noiseStdRange[1]),
-                                logDict=transformDict)
-    return img
+                                logDict=logDict)
+    return img, logDict
 
 
 def ModifyImageBatch(imgBatch, seed=None,
@@ -349,19 +349,21 @@ def ModifyImageBatch(imgBatch, seed=None,
     if seed is None:
         seed = int(random.random() * 4000000000)
         print("seed used: " + str(seed))
+    loglist = []
     for i in range(imgBatch.shape[0]):
         thisImg = imageMat[i,:,:,:]
-        newImg = ModifyImage(thisImg, seed=seed, mirrorLRProb=mirrorLRProb, mirrorUDProb=mirrorUDProb,
-                             rotationRange=rotationRange, contrastProb=contrastProb, contrastMeanRange=contrastMeanRange,
-                             contrastSpreadRange=contrastSpreadRange, rGammaProb=rGammaProb, gGammaProb=gGammaProb,
-                             bGammaProb=bGammaProb, shrinkProb=shrinkProb, shrinkRange=shrinkRange,
-                             translateProb=translateProb, translateXRange=translateXRange,translateYRange=translateYRange,
-                             lightingProb=lightingProb, lightingRadRange=lightingRadRange, lightingXRange=lightingXRange,
-                             lightingYRange=lightingYRange, noiseProb=noiseProb, noiseMeanRange=noiseMeanRange,
-                             noiseStdRange=noiseStdRange)
+        newImg, logs = ModifyImage(thisImg, seed=seed, mirrorLRProb=mirrorLRProb, mirrorUDProb=mirrorUDProb,
+                                 rotationRange=rotationRange, contrastProb=contrastProb, contrastMeanRange=contrastMeanRange,
+                                 contrastSpreadRange=contrastSpreadRange, rGammaProb=rGammaProb, gGammaProb=gGammaProb,
+                                 bGammaProb=bGammaProb, shrinkProb=shrinkProb, shrinkRange=shrinkRange,
+                                 translateProb=translateProb, translateXRange=translateXRange,translateYRange=translateYRange,
+                                 lightingProb=lightingProb, lightingRadRange=lightingRadRange, lightingXRange=lightingXRange,
+                                 lightingYRange=lightingYRange, noiseProb=noiseProb, noiseMeanRange=noiseMeanRange,
+                                 noiseStdRange=noiseStdRange)
         imgBatch[i,:,:,:] = newImg
+        loglist += [logs]
         seed = seed + 1
-    return imgBatch
+    return imgBatch, loglist
 
 
 
@@ -370,7 +372,7 @@ if __name__ == "__main__":
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[imageSize, imageSize, 3])
     print(imageMat.shape)
-    imageMat = ModifyImageBatch(imageMat)
+    imageMat, logs = ModifyImageBatch(imageMat)
     print(imageMat.shape)
     visualizeImages(imageMat, fileName="generated.png", numRows=10, numCols=10, maxImgSize=imageSize)
 
