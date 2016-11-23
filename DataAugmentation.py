@@ -77,6 +77,11 @@ Returns:
     0:  a numpy array of the new adjusted images
 """
 def gammaColorChannels(imageMat, R=True, G=True, B=True, logDict=None):
+    if logDict is not None:
+        logDict["GammaR"] = R
+        logDict["GammaG"] = G
+        logDict["GammaB"] = B
+
     if not R and not G and not B:
         return imageMat
 
@@ -129,6 +134,10 @@ Returns:
     0:  a numpy array consisting of imageMat with a graidnet mask applied to simulate a light source
 """
 def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0, logDict=None):
+    if logDict is not None:
+        logDict["LightingCenter"] = "(" + str(centerX) + "," + str(centerY) + ")"
+        logDict["LightingRadius"] = radPercent
+
     largerSide = max(imageMat.shape[1], imageMat.shape[2])
     half = int(largerSide/2)
     xCenter = (half * centerX) + half
@@ -151,6 +160,9 @@ Returns:
     0:  a numpy array consisting of imageMat with gaussian noise added
 """
 def addGausianNoise(imageMat, mean=0, std=0.05, logDict=None):
+    if logDict is not None:
+        logDict["NoiseMean"] = mean
+        logDict["NoiseStd"] = std
     noise = np.random.normal(mean, std, imageMat.shape)
     return imageMat + noise
 
@@ -168,6 +180,10 @@ Returns:
     0:  a numpy array consisting of imageMat scaled to the new intensity values
 """
 def adjustContrast(imageMat, meanIntensity=0.5, spread=0.5, logDict=None):
+    if logDict is not None:
+        logDict["MeanIntensity"] = meanIntensity
+        logDict["IntensitySpread"] = spread
+
     minIntensity = max(meanIntensity - spread, 0)
     maxIntensity = min(meanIntensity + spread, 1)
     return exposure.rescale_intensity(imageMat, (minIntensity, maxIntensity))
@@ -186,6 +202,8 @@ Returns:
     0:  a numpy array consisting of imageMat rotated by rotationPercent*360 degrees
 """
 def rotateImage(imageMat, rotationPercent=0.5, logDict=None):
+    if logDict is not None:
+        logDict["Rotation"] = rotationPercent*360
     return rotate(imageMat, rotationPercent*360, axes=[1,2], reshape=False, mode="nearest")
 
 """
@@ -201,6 +219,10 @@ Returns:
     0:  a numpy array consisting of imageMat mirrored in the requested directions
 """
 def mirrorImage(imageMat, mirrorLR=True, mirrorUD=True, logDict=None):
+    if logDict is not None:
+        logDict["MirrorLR"] = mirrorLR
+        logDict["MirrorUD"] = mirrorUD
+
     if not mirrorLR and not mirrorUD:
         return imageMat
 
@@ -228,6 +250,9 @@ Returns:
     0:  a numpy array consisting of imageMat with the seeds shrunk
 """
 def shrinkSeed(imageMat, padPercent=1, logDict=None):
+    if logDict is not None:
+        logDict["PaddingPercent"] = padPercent
+
     if padPercent <= 0:
         return np.array(imageMat)
     #pad the seed image, then resize to make seed appear smaller
@@ -254,6 +279,9 @@ Returns:
     0:    a numpy array consisting of imageMat with the seeds translated
 """
 def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
+    if logDict is not None:
+        logDict["TranslateDelta"] = "(" + str(xDelta) + "," + str(yDelta) + ")"
+
     #add padding to shift the center point
     xVal = int(round((imageMat.shape[1] * abs(xDelta))))
     yVal = int(round((imageMat.shape[2] * abs(yDelta))))
@@ -374,6 +402,8 @@ if __name__ == "__main__":
     print(imageMat.shape)
     imageMat, logs = ModifyImageBatch(imageMat)
     print(imageMat.shape)
+    print(len(logs))
+    print(logs[0])
     visualizeImages(imageMat, fileName="generated.png", numRows=10, numCols=10, maxImgSize=imageSize)
 
 
