@@ -319,15 +319,42 @@ def ModifyImage(img, seed=None,
     return img
 
 
+def ModifyImageBatch(imgBatch, seed=None,
+                    mirrorLRProb=0.5, mirrorUDProb=0.5,
+                    rotationRange=[0,1],
+                    contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
+                    rGammaProb=0.3, gGammaProb=0.5, bGammaProb=0.5,
+                    shrinkProb=0.3, shrinkRange=[0.5, 1],
+                    translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
+                    lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
+                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
+    if seed is None:
+        seed = int(random.random() * 4000000000)
+        print("seed used: " + str(seed))
+    for i in range(imgBatch.shape[0]):
+        thisImg = imageMat[i,:,:,:]
+        newImg = ModifyImage(thisImg, seed=seed, mirrorLRProb=mirrorLRProb, mirrorUDProb=mirrorUDProb,
+                             rotationRange=rotationRange, contrastProb=contrastProb, contrastMeanRange=contrastMeanRange,
+                             contrastSpreadRange=contrastSpreadRange, rGammaProb=rGammaProb, gGammaProb=gGammaProb,
+                             bGammaProb=bGammaProb, shrinkProb=shrinkProb, shrinkRange=shrinkRange,
+                             translateProb=translateProb, translateXRange=translateXRange,translateYRange=translateYRange,
+                             lightingProb=lightingProb, lightingRadRange=lightingRadRange, lightingXRange=lightingXRange,
+                             lightingYRange=lightingYRange, noiseProb=noiseProb, noiseMeanRange=noiseMeanRange,
+                             noiseStdRange=noiseStdRange)
+        imgBatch[i,:,:,:] = newImg
+        seed = seed + 1
+    return imgBatch
+
+
+
 if __name__ == "__main__":
     imageSize = 64
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[imageSize, imageSize, 3])
     print(imageMat.shape)
-    image = imageMat[0,:,:,:]
-    image = ModifyImage(image)
-    print(image.shape)
-    visualizeImages(image, fileName="generated.png", numRows=1, numCols=1, maxImgSize=imageSize)
+    imageMat = ModifyImageBatch(imageMat)
+    print(imageMat.shape)
+    visualizeImages(imageMat, fileName="generated.png", numRows=10, numCols=10, maxImgSize=imageSize)
 
 
 
