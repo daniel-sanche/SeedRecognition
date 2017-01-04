@@ -86,12 +86,13 @@ def gammaColorChannels(imageMat, R=True, G=True, B=True, logDict=None):
         return imageMat
 
     resultMat = np.array(imageMat)
+    gammaVal = 0.75
     if R:
-        resultMat[:,:,:,0] = np.power(imageMat[:,:,:,0],(2.2))
+        resultMat[:,:,:,0] = np.power(imageMat[:,:,:,0],(gammaVal))
     if G:
-        resultMat[:, :, :, 1] = np.power(imageMat[:, :, :, 1], (2.2))
+        resultMat[:, :, :, 1] = np.power(imageMat[:, :, :, 1], (gammaVal))
     if B:
-        resultMat[:, :, :, 2] = np.power(imageMat[:, :, :, 2], (2.2))
+        resultMat[:, :, :, 2] = np.power(imageMat[:, :, :, 2], (gammaVal))
     return resultMat
 
 
@@ -305,7 +306,7 @@ def ModifyImage(img, seed=None,
                 mirrorLRProb=0.5, mirrorUDProb=0.5,
                 rotationRange=[0,1],
                 contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
-                rGammaProb=0.3, gGammaProb=0.5, bGammaProb=0.5,
+                rGammaProb=0.3, gGammaProb=0.3, bGammaProb=0.3,
                 shrinkProb=0.3, shrinkRange=[0.5, 1],
                 translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
                 lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
@@ -369,7 +370,7 @@ def ModifyImageBatch(imgBatch, seed=None,
                     mirrorLRProb=0.5, mirrorUDProb=0.5,
                     rotationRange=[0,1],
                     contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
-                    rGammaProb=0.3, gGammaProb=0.5, bGammaProb=0.5,
+                    rGammaProb=0.3, gGammaProb=0.3, bGammaProb=0.3,
                     shrinkProb=0.3, shrinkRange=[0.5, 1],
                     translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
                     lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
