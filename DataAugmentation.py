@@ -309,7 +309,7 @@ def ModifyImage(img, seed=None,
                 shrinkProb=0.3, shrinkRange=[0.5, 1],
                 translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
                 lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
-                noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
+                noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.02,0.04]):
     #set up seed
     if seed is None:
         seed = int(random.random() * 4000000000)
@@ -373,7 +373,7 @@ def ModifyImageBatch(imgBatch, seed=None,
                     shrinkProb=0.3, shrinkRange=[0.5, 1],
                     translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
                     lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
-                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.03,0.15]):
+                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.02,0.04]):
     if seed is None:
         seed = int(random.random() * 4000000000)
         print("seed used: " + str(seed))
@@ -398,14 +398,10 @@ def ModifyImageBatch(imgBatch, seed=None,
 
 if __name__ == "__main__":
     pd.set_option('expand_frame_repr', False)
-    imageSize = 64
+    imageSize = 150
     imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
     imageMat = getImagesFromDir(imageDir, imageSize=[imageSize, imageSize, 3])
     print(imageMat.shape)
     imageMat, logDf = ModifyImageBatch(imageMat)
     logDf.to_csv("logs.csv")
     visualizeImages(imageMat, fileName="generated.png", numRows=10, numCols=10, maxImgSize=imageSize)
-
-
-
-
