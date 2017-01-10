@@ -266,7 +266,7 @@ def ModifyImage(img, seed=None,
         img = img.reshape([1, img.shape[0], img.shape[1], img.shape[2]])
 
     #inisitalize transform dict
-    logDict = {}
+    logDict = {"seedVal":seed}
 
     #add mirrored versions to the base images
     img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=logDict)
