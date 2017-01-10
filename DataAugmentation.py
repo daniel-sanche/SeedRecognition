@@ -1,10 +1,8 @@
-import os
 import numpy as np
 from scipy.misc import imread, imsave, imresize
 from skimage import exposure
 from scipy.ndimage import rotate, interpolation
 import random
-import pandas as pd
 
 """
 combines a portion of the imageMat ino an image file that can be displayed
@@ -37,31 +35,6 @@ def visualizeImages(imageMat, numRows=5, numCols=10, fileName="images.png", maxI
         CombinedImage = imresize(CombinedImage, [maxImgSize*numRows, maxImgSize*numCols])
     imsave(fileName, CombinedImage)
 
-"""
-loads a set of images from a directory. Will find all .png files in any nested directory
-Images will be stored as floats between 0 and 1
-
-Params:
-    imageDir:   the root directory to find images in
-    imageSize:  images will be resized to this size
-Returns:
-    0:  a numpy array of images, stacked on the first dimension
-"""
-def getImagesFromDir(imageDir, imageSize=[640, 700, 3]):
-    pathList = []
-    for root,dir, files in os.walk(imageDir):
-        for file in files:
-            if ".png" in file:
-                pathList += [os.path.join(root,file)]
-    matSize = [len((pathList))] + imageSize
-    imageMat = np.zeros(matSize)
-    i=0
-    for path in pathList:
-        img = imread(path)
-        img = imresize(img, imageSize)
-        imageMat[i,:,:,:] = img
-        i=i+1
-    return imageMat / 255
 
 """
 appplies a gamma transformation to color channels
@@ -366,43 +339,4 @@ def ModifyImage(img, seed=None,
     return img, logDict
 
 
-def ModifyImageBatch(imgBatch, seed=None,
-                    mirrorLRProb=0.5, mirrorUDProb=0.5,
-                    rotationRange=[0,1],
-                    contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
-                    rGammaProb=0.3, gGammaProb=0.3, bGammaProb=0.3,
-                    shrinkProb=0.3, shrinkRange=[0.5, 1],
-                    translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
-                    lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
-                    noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.02,0.04]):
-    if seed is None:
-        seed = int(random.random() * 4000000000)
-        print("seed used: " + str(seed))
-    loglist = []
-    for i in range(imgBatch.shape[0]):
-        thisImg = imageMat[i,:,:,:]
-        newImg, logs = ModifyImage(thisImg, seed=seed, mirrorLRProb=mirrorLRProb, mirrorUDProb=mirrorUDProb,
-                                 rotationRange=rotationRange, contrastProb=contrastProb, contrastMeanRange=contrastMeanRange,
-                                 contrastSpreadRange=contrastSpreadRange, rGammaProb=rGammaProb, gGammaProb=gGammaProb,
-                                 bGammaProb=bGammaProb, shrinkProb=shrinkProb, shrinkRange=shrinkRange,
-                                 translateProb=translateProb, translateXRange=translateXRange,translateYRange=translateYRange,
-                                 lightingProb=lightingProb, lightingRadRange=lightingRadRange, lightingXRange=lightingXRange,
-                                 lightingYRange=lightingYRange, noiseProb=noiseProb, noiseMeanRange=noiseMeanRange,
-                                 noiseStdRange=noiseStdRange)
-        imgBatch[i,:,:,:] = newImg
-        loglist += [logs]
-        seed = seed + 1
-    df = pd.DataFrame(loglist)
-    return imgBatch, df
 
-
-
-if __name__ == "__main__":
-    pd.set_option('expand_frame_repr', False)
-    imageSize = 150
-    imageDir = "/Users/Sanche/Datasets/Seeds_Xin"
-    imageMat = getImagesFromDir(imageDir, imageSize=[imageSize, imageSize, 3])
-    print(imageMat.shape)
-    imageMat, logDf = ModifyImageBatch(imageMat)
-    logDf.to_csv("logs.csv")
-    visualizeImages(imageMat, fileName="generated.png", numRows=10, numCols=10, maxImgSize=imageSize)

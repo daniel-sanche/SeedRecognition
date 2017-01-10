@@ -3,7 +3,7 @@ import os
 import random
 from scipy.misc import imread, imresize
 import numpy as np
-from DataAugmentation import  ModifyImage
+from DataAugmentation import  ModifyImage, visualizeImages
 import pandas as pd
 """
 creates a label dict file that holds the names of each folder associated with each class
@@ -86,5 +86,7 @@ if __name__ == "__main__":
     dataset_path = "/Users/Sanche/Datasets/Seeds_Full"
     config_path = dataset_path + "/slice_config"
 
-    for i in augmentedImageGenerator(dataset_path, config_path):
-        print(i)
+    for imgMat, logDf in augmentedImageGenerator(dataset_path, config_path, batchSize=16):
+        logDf.to_csv("logs.csv")
+        visualizeImages(imgMat, fileName="generated.png", numCols=4, numRows=4)
+        break
