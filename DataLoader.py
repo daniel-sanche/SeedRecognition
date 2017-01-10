@@ -112,29 +112,39 @@ Params:
     imageSize:  a vector of 3 values that represents the size all images should be scaled to
                 ex, [500, 500, 3]
     seed:       if set, the same image sequence will be generated each run
+    keepLogs:   determines whether logs are saved. If true, a csv file called logs.csv will be saved
+                in the project directory containing information about each image used in each batch,
+                and all augmentations performed on the images
 
 Yields:
-    0:  a numpy array containing a batch of images. Will be size [batchSize, imageSize[0],imageSize[1],imageSize[2]]
-    1:  a pandas array containing information about each image used in the batch, and all augmentations performed
-        on the image for logging putposes
+    0:  a numpy matrix containing a batch of images. Will be size [batchSize, imageSize[0],imageSize[1],imageSize[2]]
+    1:  a 1D numpy array containing the class label for each image in the batch. Size [batchSize, 1]
 """
-def augmentedImageGenerator(dataDir, configPath, batchSize=10, imageSize=[200,200,3], seed=None):
+def augmentedImageGenerator(dataDir, configPath, batchSize=10, imageSize=[200,200,3], seed=None, keepLogs=True):
     imageLoader = rawImageLoader(dataDir, configPath, imageSize)
+    logFile = "./logs.csv"
     if seed is None:
         seed = int(random.random() * 4000000000)
         print("seed used: " + str(seed))
     while True:
         loglist = []
+        labelMat = np.zeros([batchSize, 1])
         batchMat = np.zeros([batchSize]+imageSize)
         for i in range(batchSize):
             img, classNum, filePath = next(imageLoader)
             augmentedImg, logs = ModifyImage(img, seed=seed)
             batchMat[i, :, :, :] = augmentedImg
-            logs["class"] = classNum
-            logs["path"] = filePath
-            loglist += [logs]
+            labelMat[i] = classNum
             seed = seed + 1
-        yield batchMat, pd.DataFrame(loglist)
+            if keepLogs:
+                logs["class"] = classNum
+                logs["path"] = filePath
+                loglist += [logs]
+        #save log file to disk
+        if keepLogs:
+            logDf = pd.DataFrame(loglist)
+            logDf.to_csv(logFile, mode='a', header=(not os.path.exists(logFile)), index=False)
+        yield batchMat, labelMat
 
 
 
@@ -143,7 +153,10 @@ if __name__ == "__main__":
     dataset_path = "/Users/Sanche/Datasets/Seeds_Full"
     config_path = dataset_path + "/slice_config"
 
-    for imgMat, logDf in augmentedImageGenerator(dataset_path, config_path, batchSize=16):
-        logDf.to_csv("logs.csv")
+    #delete old logs
+    if os.path.exists("./logs.csv"):
+        os.remove("./logs.csv")
+
+    for imgMat, labelMat in augmentedImageGenerator(dataset_path, config_path, batchSize=16):
         visualizeImages(imgMat, fileName="generated.png", numCols=4, numRows=4)
-        break
+        print("done")
