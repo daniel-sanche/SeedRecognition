@@ -5,7 +5,7 @@ from scipy.ndimage import rotate, interpolation
 import random
 
 """
-appplies a gamma transformation to color channels
+applies a gamma transformation to color channels
 
 Params:
     imageMat:   the numpy array of images to adjust
@@ -242,7 +242,9 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     yMax = yMin + imageMat.shape[2]
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
-
+"""
+Used to modify a augment a single image
+"""
 def ModifyImage(img, seed=None,
                 mirrorLRProb=0.5, mirrorUDProb=0.5,
                 rotationRange=[0,1],
