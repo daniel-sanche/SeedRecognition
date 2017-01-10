@@ -3,7 +3,8 @@ import os
 import random
 from scipy.misc import imread, imresize
 import numpy as np
-from DataAugmentation import  ModifyImage, visualizeImages
+from DataAugmentation import  ModifyImage
+from Visualization import visualizeImages
 import pandas as pd
 """
 creates a label dict file that holds the names of each folder associated with each class
