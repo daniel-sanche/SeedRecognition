@@ -12,10 +12,10 @@ import tensorflow as tf
 import numpy as np
 from scipy.misc import imread, imresize
 import warnings
-
+import os
 
 class vgg16:
-    def __init__(self, weights):
+    def __init__(self, baseWeights, checkpointFile="./vggseed.ckpt"):
         self.sess = tf.Session()
         self.imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
         self.labels = tf.placeholder(tf.int32, [None])
@@ -25,8 +25,14 @@ class vgg16:
         self.output_probs = tf.nn.softmax(self.rawOut)
         #initialize all variables
         self.sess.run(tf.global_variables_initializer())
-        if weights is not None:
-            self.load_weights(weights)
+        self.saver = tf.train.Saver()
+        self.checkpoint = checkpointFile
+        if os.path.exists(checkpointFile+".meta"):
+            print("restoring checkpoint...")
+            self.saver.restore(self.sess, checkpointFile)
+        else:
+            print("no checkpoint. Loading base weights...")
+            self.load_weights(baseWeights)
 
 
     def convlayers(self):
@@ -274,6 +280,10 @@ class vgg16:
             print (i, k, np.shape(weights[k]))
             self.sess.run(self.parameters[i].assign(weights[k]))
 
+    def save_checkpoint(self):
+        print("saving checkpoint...")
+        self.saver.save(self.sess, self.checkpoint)
+
 
     ### Main Interface
 
@@ -296,3 +306,4 @@ if __name__ == '__main__':
     for i in range(5):
         result = vgg.train([img1], [0])
         print(result)
+    vgg.save_checkpoint()
