@@ -11,7 +11,6 @@
 import tensorflow as tf
 import numpy as np
 from scipy.misc import imread, imresize
-from imagenet_classes import class_names
 import warnings
 
 
