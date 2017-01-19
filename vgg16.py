@@ -16,12 +16,14 @@ import warnings
 
 
 class vgg16:
-    def __init__(self, weights=None):
+    def __init__(self, weights):
         self.sess = tf.Session()
         self.imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
+        self.labels = tf.placeholder(tf.int32, [None])
         self.convlayers()
         self.fc_layers()
-        self.probs = tf.nn.softmax(self.fc4l)
+        self.costfunction()
+        self.output_probs = tf.nn.softmax(self.rawOut)
         if weights is not None:
             self.load_weights(weights)
 
@@ -256,8 +258,13 @@ class vgg16:
                                                    stddev=1e-1), name='weights')
             fc4b = tf.Variable(tf.constant(1.0, shape=[30], dtype=tf.float32),
                                trainable=True, name='biases')
-            self.fc4l = tf.nn.bias_add(tf.matmul(self.fc3, fc4w), fc4b)
+            self.rawOut = tf.nn.bias_add(tf.matmul(self.fc3, fc4w), fc4b)
             self.parameters += [fc4w, fc4b]
+
+    def costfunction(self, learningRate=1e-4):
+        costVec = tf.nn.sparse_softmax_cross_entropy_with_logits(self.rawOut, self.labels)
+        self.costVal = tf.reduce_mean(costVec)
+        self.trainFunc = tf.train.GradientDescentOptimizer(learning_rate=learningRate).minimize(self.costVal)
 
     def load_weights(self, weight_file):
         weights = np.load(weight_file)
@@ -272,8 +279,18 @@ class vgg16:
         print(33, 'out_b', "(30,)")
         self.sess.run(self.parameters[33].assign(np.random.normal(size=[30,])))
 
+
+    ### Main Interface
+
     def predict(self, imageMat):
-        return self.sess.run(self.probs, feed_dict={self.imgs:imageMat})
+        probs = self.sess.run(self.output_probs, feed_dict={self.imgs:imageMat})
+        return probs
+
+    def train(self, imageMat, labelMat):
+        _,cost, probs = self.sess.run((self.trainFunc,self.costVal, self.output_probs),
+                                            feed_dict={self.imgs: imageMat, self.labels:labelMat})
+        predictions = np.argmax(probs,axis=-1)
+        return cost, predictions
 
 
 if __name__ == '__main__':
@@ -281,10 +298,6 @@ if __name__ == '__main__':
 
     img1 = imread('laska.png', mode='RGB')
     img1 = imresize(img1, (224, 224))
-
-    result = vgg.predict([img1])
-    prob = result[0]
-    preds = (np.argsort(prob)[::-1])[0:5]
-    print("\n predictions:")
-    for p in preds:
-        print (class_names[p], prob[p])
+    for i in range(5):
+        result = vgg.train([img1], [0])
+        print(result)
