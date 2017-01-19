@@ -19,7 +19,7 @@ class vgg16:
         self.imgs = imgs
         self.convlayers()
         self.fc_layers()
-        self.probs = tf.nn.softmax(self.fc3l)
+        self.probs = tf.nn.softmax(self.fc4l)
         if weights is not None and sess is not None:
             self.load_weights(weights, sess)
 
@@ -242,8 +242,19 @@ class vgg16:
                                                          stddev=1e-1), name='weights')
             fc3b = tf.Variable(tf.constant(1.0, shape=[1000], dtype=tf.float32),
                                  trainable=True, name='biases')
-            self.fc3l = tf.nn.bias_add(tf.matmul(self.fc2, fc3w), fc3b)
+            fc3l = tf.nn.bias_add(tf.matmul(self.fc2, fc3w), fc3b)
+            self.fc3 = tf.nn.relu(fc3l)
             self.parameters += [fc3w, fc3b]
+
+        # fc4 output
+        with tf.name_scope('fc4') as scope:
+            fc4w = tf.Variable(tf.truncated_normal([1000, 30],
+                                                   dtype=tf.float32,
+                                                   stddev=1e-1), name='weights')
+            fc4b = tf.Variable(tf.constant(1.0, shape=[30], dtype=tf.float32),
+                               trainable=True, name='biases')
+            self.fc4l = tf.nn.bias_add(tf.matmul(self.fc3, fc4w), fc4b)
+            self.parameters += [fc4w, fc4b]
 
     def load_weights(self, weight_file, sess):
         weights = np.load(weight_file)
@@ -251,16 +262,23 @@ class vgg16:
         for i, k in enumerate(keys):
             print (i, k, np.shape(weights[k]))
             sess.run(self.parameters[i].assign(weights[k]))
+        #assign values for added layer
+        print ("*adding random values for new output layer...")
+        print(32, 'out_w', (1000,30))
+        sess.run(self.parameters[32].assign(np.random.normal(size=[1000, 30])))
+        print(33, 'out_b', "(30,)")
+        sess.run(self.parameters[33].assign(np.random.normal(size=[30,])))
 
 if __name__ == '__main__':
     sess = tf.Session()
     imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
     vgg = vgg16(imgs, 'vgg16_weights.npz', sess)
 
-    img1 = imread('seed.png', mode='RGB')
+    img1 = imread('laska.png', mode='RGB')
     img1 = imresize(img1, (224, 224))
 
     prob = sess.run(vgg.probs, feed_dict={vgg.imgs: [img1]})[0]
     preds = (np.argsort(prob)[::-1])[0:5]
+    print("\n predictions:")
     for p in preds:
         print (class_names[p], prob[p])
