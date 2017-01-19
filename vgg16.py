@@ -23,6 +23,8 @@ class vgg16:
         self.fc_layers()
         self.costfunction()
         self.output_probs = tf.nn.softmax(self.rawOut)
+        #initialize all variables
+        self.sess.run(tf.global_variables_initializer())
         if weights is not None:
             self.load_weights(weights)
 
@@ -271,12 +273,6 @@ class vgg16:
         for i, k in enumerate(keys):
             print (i, k, np.shape(weights[k]))
             self.sess.run(self.parameters[i].assign(weights[k]))
-        #assign values for added layer
-        print ("*adding random values for new output layer...")
-        print(32, 'out_w', (1000,30))
-        self.sess.run(self.parameters[32].assign(np.random.normal(size=[1000, 30])))
-        print(33, 'out_b', "(30,)")
-        self.sess.run(self.parameters[33].assign(np.random.normal(size=[30,])))
 
 
     ### Main Interface
