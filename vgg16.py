@@ -12,6 +12,7 @@ import tensorflow as tf
 import numpy as np
 from scipy.misc import imread, imresize
 from imagenet_classes import class_names
+import warnings
 
 
 class vgg16:
@@ -29,7 +30,8 @@ class vgg16:
 
         # zero-mean input
         with tf.name_scope('preprocess') as scope:
-            mean = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
+            warnings.warn("fix mean value", UserWarning)
+            mean = tf.constant([0, 0, 0], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
             images = self.imgs-mean
 
         # conv1_1
