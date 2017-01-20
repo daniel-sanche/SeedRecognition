@@ -15,7 +15,7 @@ import warnings
 import os
 
 class vgg16:
-    def __init__(self, baseWeights, checkpointFile="./vggseed.ckpt"):
+    def __init__(self, baseWeights, checkpointFile="./checkpoints/vggseed.ckpt"):
         self.sess = tf.Session()
         self.imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
         self.labels = tf.placeholder(tf.int32, [None])
@@ -282,6 +282,11 @@ class vgg16:
 
     def save_checkpoint(self):
         print("saving checkpoint...")
+        #create folder if necessary
+        folderName = os.path.dirname(self.checkpoint)
+        if not os.path.exists(folderName):
+            os.mkdir(folderName)
+
         self.saver.save(self.sess, self.checkpoint)
 
 
