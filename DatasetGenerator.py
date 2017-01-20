@@ -168,5 +168,5 @@ if __name__ == "__main__":
     rawImageLoader = rawImageLoader(dataset_path, config_path, [224, 224, 3])
     augmentor = imageAugmentor(rawImageLoader)
     print(datetime.now().time())
-    generatedImageSaver(augmentor, numImages=1000)
+    generatedImageSaver(augmentor, numImages=300)
     print(datetime.now().time())
