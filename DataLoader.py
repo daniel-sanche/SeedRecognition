@@ -5,6 +5,7 @@ from scipy.misc import imread, imresize
 import pandas as pd
 from DataAugmentation import  ModifyImage
 from scipy.misc import imsave
+from datetime import  datetime
 
 """
 finds all image folders associated with each class
@@ -164,10 +165,8 @@ if __name__ == "__main__":
     dataset_path = "/home/sanche/Datasets/Seed_Images"
     config_path = dataset_path + "/slice_config"
 
-    #delete old logs
-    if os.path.exists("./logs.csv"):
-        os.remove("./logs.csv")
-
     rawImageLoader = rawImageLoader(dataset_path, config_path, [224, 224, 3])
-    augmentor = imageAugmentor(dataset_path, config_path)
-    generatedImageSaver(augmentor, numImages=50)
+    augmentor = imageAugmentor(rawImageLoader)
+    print(datetime.now().time())
+    generatedImageSaver(augmentor, numImages=1000)
+    print(datetime.now().time())
