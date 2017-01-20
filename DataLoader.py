@@ -85,7 +85,7 @@ Yields:
     1:  the image's class number
     2:  the image's relative file path in dataset folder
 """
-def rawImageLoader(dataDir, configPath, imageSize, asFloat=True, fileListPath="./fileList.csv"):
+def rawImageLoader(dataDir, configPath, imageSize=[224, 224, 3], asFloat=True, fileListPath="./fileList.csv"):
     if not os.path.exists(fileListPath):
         createFileList(dataDir, configPath, fileListPath)
     while True:
@@ -106,34 +106,43 @@ Uses rawImageLoader, but preforms various augmentations on the loaded images.
 Will load unique files indefinitely
 
 Params:
-    dataDir:    the directory that holds the dataset
-    configPath: a path to the slice_config file which assiciated folders with classes
-    imageSize:  a vector of 3 values that represents the size all images should be scaled to
-                ex, [500, 500, 3]
-    seed:       if set, the same image sequence will be generated each run
+    rawImageLoader: an instance of a rawImageLoader, used to load images from disk to augment
+    seed:           if set, the same image sequence will be generated each run
 
 Yields:
     0:  a numpy matrix containing an image
     1:  a dict containting metadata about the image
 """
-def imageGenerator(dataDir, configPath, imageSize=[224,224,3], seed=None):
-    imageLoader = rawImageLoader(dataDir, configPath, imageSize)
+def imageAugmentor(rawImageLoader, seed=None):
     if seed is None:
         seed = int(random.random() * 4000000000)
         print("seed used: " + str(seed))
     while True:
-        img, classNum, filePath = next(imageLoader)
+        img, classNum, filePath = next(rawImageLoader)
         augmentedImg, metadata = ModifyImage(img, seed=seed)
         seed = seed + 1
         metadata["class"] = classNum
         metadata["origImgPath"] = filePath
         yield img, metadata
 
-def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImages", logFileName="metadata.csv", indexFile="index.tsv"):
+"""
+This function will create the generated image dataset
+It pulls augmented images out of an imageAugmentor generator, and saves them to disk, along with relevant metadata
+Will also save an index, so loading the images later will be easy
+Can be called multiple times, and it will add new images without touching the existing ones
+
+Params:
+    imageGenerator: an instance of imageAugmentor to supply us with augmented images
+    numImages:      the number of images to add to the directory
+    imageDir:       the directory to save images in
+    logFileName:    the name of the log file, containing metadata about each generated image
+    indexFileName:  the name of the index file, which contains a list of filenames and their respective classes
+                    this file is used to easily load images in order without searching through directories
+"""
+def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImages", logFileName="metadata.csv", indexFileName="index.tsv"):
     if not os.path.exists(imageDir):
         os.mkdir(imageDir)
-
-    with open(os.path.join(imageDir, indexFile), 'a') as index:
+    with open(os.path.join(imageDir, indexFileName), 'a') as index:
         logList = []
         for i in range(numImages):
             print("%d /%d" % (i, numImages))
@@ -159,5 +168,6 @@ if __name__ == "__main__":
     if os.path.exists("./logs.csv"):
         os.remove("./logs.csv")
 
-    generator = imageGenerator(dataset_path, config_path)
-    generatedImageSaver(generator, numImages=10)
+    rawImageLoader = rawImageLoader(dataset_path, config_path, [224, 224, 3])
+    augmentor = imageAugmentor(dataset_path, config_path)
+    generatedImageSaver(augmentor, numImages=50)
