@@ -100,22 +100,22 @@ def rawImageLoader(dataDir, configPath, imageSize, asFloat=True, fileListPath=".
                 yield img, classNum, fileSuffix
 
 
--"""
--a python generator function that yields augmented images.
--Uses rawImageLoader, but preforms various augmentations on the loaded images.
--Will load unique files indefinitely
--
--Params:
--    dataDir:    the directory that holds the dataset
--    configPath: a path to the slice_config file which assiciated folders with classes
--    imageSize:  a vector of 3 values that represents the size all images should be scaled to
--                ex, [500, 500, 3]
--    seed:       if set, the same image sequence will be generated each run
+"""
+a python generator function that yields augmented images.
+Uses rawImageLoader, but preforms various augmentations on the loaded images.
+Will load unique files indefinitely
 
--Yields:
--    0:  a numpy matrix containing an image
--    1:  a dict containting metadata about the image
--"""
+Params:
+    dataDir:    the directory that holds the dataset
+    configPath: a path to the slice_config file which assiciated folders with classes
+    imageSize:  a vector of 3 values that represents the size all images should be scaled to
+                ex, [500, 500, 3]
+    seed:       if set, the same image sequence will be generated each run
+
+Yields:
+    0:  a numpy matrix containing an image
+    1:  a dict containting metadata about the image
+"""
 def imageGenerator(dataDir, configPath, imageSize=[224,224,3], seed=None):
     imageLoader = rawImageLoader(dataDir, configPath, imageSize)
     if seed is None:
@@ -129,24 +129,25 @@ def imageGenerator(dataDir, configPath, imageSize=[224,224,3], seed=None):
         metadata["origImgPath"] = filePath
         yield img, metadata
 
-def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImages", logFileName="metadata.csv"):
+def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImages", logFileName="metadata.csv", indexFile="index.tsv"):
     if not os.path.exists(imageDir):
         os.mkdir(imageDir)
 
-    logList = []
-
-    for i in range(numImages):
-        print("%d /%d" % (i, numImages))
-        newImage, logs = next(imageGenerator)
-        origFileName = logs["origImgPath"].replace("/", "|")
-        seedUsed = str(logs["seedVal"])
-        fileName = seedUsed + "|" + origFileName
-        logs["fileName"] = fileName
-        imsave(os.path.join(imageDir, fileName), newImage)
-        logList.append(logs)
-    logDf = pd.DataFrame(logList)
-    logFilePath = os.path.join(imageDir, logFileName)
-    logDf.to_csv(logFilePath, mode='a', header=(not os.path.exists(logFilePath)), index=False)
+    with open(os.path.join(imageDir, indexFile), 'a') as index:
+        logList = []
+        for i in range(numImages):
+            print("%d /%d" % (i, numImages))
+            newImage, logs = next(imageGenerator)
+            origFileName = logs["origImgPath"].replace("/", "|")
+            seedUsed = str(logs["seedVal"])
+            fileName = seedUsed + "|" + origFileName
+            logs["fileName"] = fileName
+            imsave(os.path.join(imageDir, fileName), newImage)
+            logList.append(logs)
+            index.write(logs["class"] + "\t" + fileName + "\n")
+        logDf = pd.DataFrame(logList)
+        logFilePath = os.path.join(imageDir, logFileName)
+        logDf.to_csv(logFilePath, mode='a', header=(not os.path.exists(logFilePath)), index=False)
 
 
 
