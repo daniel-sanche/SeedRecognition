@@ -2,10 +2,10 @@ import pickle
 import os
 import random
 from scipy.misc import imread, imresize
-import numpy as np
-from DataAugmentation import  ModifyImage
-from Visualization import visualizeImages
 import pandas as pd
+from DataAugmentation import  ModifyImage
+from scipy.misc import imsave
+from datetime import  datetime
 
 """
 finds all image folders associated with each class
@@ -86,7 +86,7 @@ Yields:
     1:  the image's class number
     2:  the image's relative file path in dataset folder
 """
-def rawImageLoader(dataDir, configPath, imageSize, asFloat=True, fileListPath="./fileList.csv"):
+def rawImageLoader(dataDir, configPath, imageSize=[224, 224, 3], asFloat=True, fileListPath="./fileList.csv"):
     if not os.path.exists(fileListPath):
         createFileList(dataDir, configPath, fileListPath)
     while True:
@@ -100,63 +100,73 @@ def rawImageLoader(dataDir, configPath, imageSize, asFloat=True, fileListPath=".
                     img = img / 255
                 yield img, classNum, fileSuffix
 
+
 """
-a python generator function that yields batches of augmented images.
+a python generator function that yields augmented images.
 Uses rawImageLoader, but preforms various augmentations on the loaded images.
 Will load unique files indefinitely
 
 Params:
-    dataDir:    the directory that holds the dataset
-    configPath: a path to the slice_config file which assiciated folders with classes
-    batchSize:  the number of images to include in the batch
-    imageSize:  a vector of 3 values that represents the size all images should be scaled to
-                ex, [500, 500, 3]
-    seed:       if set, the same image sequence will be generated each run
-    keepLogs:   determines whether logs are saved. If true, a csv file called logs.csv will be saved
-                in the project directory containing information about each image used in each batch,
-                and all augmentations performed on the images
+    rawImageLoader: an instance of a rawImageLoader, used to load images from disk to augment
+    seed:           if set, the same image sequence will be generated each run
 
 Yields:
-    0:  a numpy matrix containing a batch of images. Will be size [batchSize, imageSize[0],imageSize[1],imageSize[2]]
-    1:  a 1D numpy array containing the class label for each image in the batch. Size [batchSize, 1]
+    0:  a numpy matrix containing an image
+    1:  a dict containting metadata about the image
 """
-def augmentedImageGenerator(dataDir, configPath, batchSize=10, imageSize=[200,200,3], seed=None, keepLogs=True):
-    imageLoader = rawImageLoader(dataDir, configPath, imageSize)
-    logFile = "./logs.csv"
+def imageAugmentor(rawImageLoader, seed=None):
     if seed is None:
         seed = int(random.random() * 4000000000)
         print("seed used: " + str(seed))
     while True:
-        loglist = []
-        labelMat = np.zeros([batchSize, 1])
-        batchMat = np.zeros([batchSize]+imageSize)
-        for i in range(batchSize):
-            img, classNum, filePath = next(imageLoader)
-            augmentedImg, logs = ModifyImage(img, seed=seed)
-            batchMat[i, :, :, :] = augmentedImg
-            labelMat[i] = classNum
-            seed = seed + 1
-            if keepLogs:
-                logs["class"] = classNum
-                logs["path"] = filePath
-                loglist += [logs]
-        #save log file to disk
-        if keepLogs:
-            logDf = pd.DataFrame(loglist)
-            logDf.to_csv(logFile, mode='a', header=(not os.path.exists(logFile)), index=False)
-        yield batchMat, labelMat
+        img, classNum, filePath = next(rawImageLoader)
+        augmentedImg, metadata = ModifyImage(img, seed=seed)
+        seed = seed + 1
+        metadata["class"] = classNum
+        metadata["origImgPath"] = filePath
+        yield img, metadata
 
+"""
+This function will create the generated image dataset
+It pulls augmented images out of an imageAugmentor generator, and saves them to disk, along with relevant metadata
+Will also save an index, so loading the images later will be easy
+Can be called multiple times, and it will add new images without touching the existing ones
+
+Params:
+    imageGenerator: an instance of imageAugmentor to supply us with augmented images
+    numImages:      the number of images to add to the directory
+    imageDir:       the directory to save images in
+    logFileName:    the name of the log file, containing metadata about each generated image
+    indexFileName:  the name of the index file, which contains a list of filenames and their respective classes
+                    this file is used to easily load images in order without searching through directories
+"""
+def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImages", logFileName="metadata.csv", indexFileName="index.tsv"):
+    if not os.path.exists(imageDir):
+        os.mkdir(imageDir)
+    with open(os.path.join(imageDir, indexFileName), 'a') as index:
+        logList = []
+        for i in range(numImages):
+            print("%d /%d" % (i, numImages))
+            newImage, logs = next(imageGenerator)
+            origFileName = logs["origImgPath"].replace("/", "|")
+            seedUsed = str(logs["seedVal"])
+            fileName = seedUsed + "|" + origFileName
+            logs["fileName"] = fileName
+            imsave(os.path.join(imageDir, fileName), newImage)
+            logList.append(logs)
+            index.write(logs["class"] + "\t" + fileName + "\n")
+        logDf = pd.DataFrame(logList)
+        logFilePath = os.path.join(imageDir, logFileName)
+        logDf.to_csv(logFilePath, mode='a', header=(not os.path.exists(logFilePath)), index=False)
 
 
 
 if __name__ == "__main__":
-    dataset_path = "/Users/Sanche/Datasets/Seeds_Full"
+    dataset_path = "/home/sanche/Datasets/Seed_Images"
     config_path = dataset_path + "/slice_config"
 
-    #delete old logs
-    if os.path.exists("./logs.csv"):
-        os.remove("./logs.csv")
-
-    for imgMat, labelMat in augmentedImageGenerator(dataset_path, config_path, batchSize=16):
-        visualizeImages(imgMat, fileName="generated.png", numCols=4, numRows=4)
-        print("done")
+    rawImageLoader = rawImageLoader(dataset_path, config_path, [224, 224, 3])
+    augmentor = imageAugmentor(rawImageLoader)
+    print(datetime.now().time())
+    generatedImageSaver(augmentor, numImages=1000)
+    print(datetime.now().time())
