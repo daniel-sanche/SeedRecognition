@@ -97,7 +97,7 @@ def rawImageLoader(dataDir, configPath, imageSize=[224, 224, 3], asFloat=True, f
                 img = imread(fileName)
                 img = imresize(img, imageSize)
                 if asFloat:
-                    img = img / 255
+                    img = img / 255.0
                 yield img, classNum, fileSuffix
 
 

@@ -200,8 +200,10 @@ def shrinkSeed(imageMat, padPercent=1, logDict=None):
     #pad the seed image, then resize to make seed appear smaller
     padValWidth = int(round((imageMat.shape[1] * padPercent)/2))
     padValHeight = int(round((imageMat.shape[2] * padPercent) / 2))
-    resultMat = np.lib.pad(imageMat, ((0,0), (padValWidth, padValWidth), (padValHeight, padValHeight), (0,0)), mode="edge")
-    resultMat = interpolation.zoom(resultMat, [1, imageMat.shape[1]/resultMat.shape[1], imageMat.shape[2]/resultMat.shape[2], 1])
+    paddedMat = np.lib.pad(imageMat, ((0,0), (padValWidth, padValWidth), (padValHeight, padValHeight), (0,0)), mode="edge")
+
+    zooomVals = [1, imageMat.shape[1]/float(paddedMat.shape[1]), imageMat.shape[2]/float(paddedMat.shape[2]), 1]
+    resultMat = interpolation.zoom(paddedMat, zooomVals)
     return resultMat[:,:imageMat.shape[1],:imageMat.shape[2],:]
 
 """
