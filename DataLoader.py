@@ -34,7 +34,7 @@ Yields:
     [0]:    a numpy matrix containing a batch of images
     [1]:    a numpy array of label values for each image
 """
-def batchLoader(imageDir, indexFileName="index.tsv", batchSize=65):
+def batchLoader(imageDir, indexFileName="index.tsv", batchSize=64):
     index = indexReader(os.path.join(imageDir, indexFileName))
     #find the file size
     imageSize =  imread(os.path.join(imageDir, next(index)[0])).shape

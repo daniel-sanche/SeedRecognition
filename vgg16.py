@@ -13,6 +13,7 @@ import numpy as np
 from scipy.misc import imread, imresize
 import warnings
 import os
+import DataLoader
 
 class vgg16:
     def __init__(self, baseWeights, checkpointFile="./checkpoints/vggseed.ckpt"):
@@ -302,13 +303,16 @@ class vgg16:
         predictions = np.argmax(probs,axis=-1)
         return cost, predictions
 
+if __name__ == "__main__":
+    imageDir = "./GeneratedImages"
 
-if __name__ == '__main__':
     vgg = vgg16('vgg16_weights.npz')
-
-    img1 = imread('laska.png', mode='RGB')
-    img1 = imresize(img1, (224, 224))
-    for i in range(5):
-        result = vgg.train([img1], [0])
+    batchSize = 8
+    i = 0
+    for imageBatch, classBatch in DataLoader.batchLoader(imageDir, batchSize=batchSize):
+        result = vgg.train(imageBatch, classBatch.reshape([batchSize,]))
+        result = (result[0], result[1], classBatch)
         print(result)
-    vgg.save_checkpoint()
+        if i % 50 == 0:
+            vgg.save_checkpoint()
+        i = i + 1
