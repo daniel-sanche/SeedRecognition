@@ -37,10 +37,20 @@ have a similar distribution of all classes to prevent bias
 
 Params:
     dataDir:    the directory that holds the dataset
+    fileName:    the base name for the created csv file. File extension and bin number will be appended
     configPath: a path to the slice_config file which assiciated folders with classes
-    outPath:    the output path for the csv file
+    numBins:    the number of bins to divide the resulting images into
+                used for training and validation sets. Each bin will try to have an equal number of all classes
 """
-def createFileList(dataDir, configPath, outputPath):
+def createFileList(dataDir, fileName="fileList", configPath="./class_map.txt", num_Bins=1):
+    #check to see if the files already exist
+    existingFiles = []
+    for f in os.listdir("./"):
+        if fileName in f and ".csv" in f:
+            existingFiles.append(f)
+    if len(existingFiles) > 0:
+        print("File Lists already exist")
+        return existingFiles
     #find all the folders associated with each class
     labelDict = getFolderLabels(configPath)
     #find the set of all files associated with each class
@@ -57,15 +67,28 @@ def createFileList(dataDir, configPath, outputPath):
     for key in classDict:
         random.shuffle(classDict[key])
     #print a csv file that steps through random samples of each class equally
-    with open(outputPath, 'w') as outFile:
-        numNotEmpty = 1
-        while numNotEmpty > 0:
-            numNotEmpty = 0
-            for key in classDict:
-                thisList = classDict[key]
-                if len(thisList) > 0:
-                    numNotEmpty += 1
-                    outFile.write(thisList.pop() + "\t" + str(key) + "\n")
+    outputList = []
+    nameList = []
+    for i in range(1, num_Bins+1):
+        if num_Bins == 1:
+            thisName = fileName + ".csv"
+        else:
+            thisName = fileName + "_" + str(i) + ".csv"
+        nameList.append(thisName)
+        outputList.append(open(thisName, 'w'))
+
+    numNotEmpty = 1
+    i = 0
+    while numNotEmpty > 0:
+        numNotEmpty = 0
+        outFile = outputList[i%num_Bins]
+        for key in classDict:
+            thisList = classDict[key]
+            if len(thisList) > 0:
+                numNotEmpty += 1
+                outFile.write(thisList.pop() + "\t" + str(key) + "\n")
+        i += 1
+    return nameList
 
 
 """
@@ -75,20 +98,20 @@ a float representation. Will loop through files indefinitely
 
 Params:
     dataDir:    the directory that holds the dataset
-    configPath: a path to the slice_config file which assiciated folders with classes
+    fileListPath:    the path of the file list csv file
     imageSize:  a vector of 3 values that represents the size all images should be scaled to
                 ex, [500, 500, 3]
     asFloat:    determines whether images should be converted to a float representation
-    fileListPath:    the path of the  file list csv file
 
 Yields:
     0:  the image loaded from disk
     1:  the image's class number
     2:  the image's relative file path in dataset folder
 """
-def rawImageLoader(dataDir, configPath, imageSize=[224, 224, 3], asFloat=True, fileListPath="./fileList.csv"):
+def rawImageLoader(dataDir, fileListPath, imageSize=[224, 224, 3], asFloat=True):
     if not os.path.exists(fileListPath):
-        createFileList(dataDir, configPath, fileListPath)
+        print("Could not find file %s" % fileListPath)
+        return
     while True:
         with open(fileListPath) as file:
             for line in file:
@@ -146,7 +169,8 @@ def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImag
     with open(os.path.join(imageDir, indexFileName), 'a') as index:
         logList = []
         for i in range(numImages):
-            print("%d /%d" % (i, numImages))
+            if i % 100 == 0:
+                print("%d /%d" % (i, numImages))
             newImage, logs = next(imageGenerator)
             origFileName = logs["origImgPath"].replace("/", "|")
             seedUsed = str(logs["seedVal"])
@@ -160,13 +184,15 @@ def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImag
         logDf.to_csv(logFilePath, mode='a', header=(not os.path.exists(logFilePath)), index=False)
 
 
-
+#this function will generate file lists, then load and augment images from the file lists, and save them to new folders
+#file lists contain the path to an image, and it's class name
 if __name__ == "__main__":
     dataset_path = "/home/sanche/Datasets/Seed_Images"
-    config_path = dataset_path + "/slice_config"
 
-    rawImageLoader = rawImageLoader(dataset_path, config_path, [224, 224, 3])
-    augmentor = imageAugmentor(rawImageLoader)
-    print(datetime.now().time())
-    generatedImageSaver(augmentor, numImages=300)
-    print(datetime.now().time())
+    newFileLists = createFileList(dataset_path, fileName="filesInBin", num_Bins=2)
+    for idx, thisFile in enumerate(newFileLists):
+        imgLoader = rawImageLoader(dataset_path, thisFile, [224, 224, 3])
+        augmentor = imageAugmentor(imgLoader)
+        print(datetime.now().time())
+        generatedImageSaver(augmentor, numImages=10000, imageDir="GeneratedImages_Bin"+str(idx+1))
+        print(datetime.now().time())
