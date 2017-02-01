@@ -40,7 +40,7 @@ def batchLoader(imageDir, indexFileName="index.tsv", batchSize=64):
     imageSize =  imread(os.path.join(imageDir, next(index)[0])).shape
     while True:
         thisBatch = np.zeros([batchSize, imageSize[0], imageSize[1], imageSize[2]])
-        labelBatch = np.zeros([batchSize, 1])
+        labelBatch = np.zeros([batchSize, 1], dtype=int)
         for i in range(batchSize):
             fileName, classVal = next(index)
             thisImage = imread(os.path.join(imageDir, fileName))

@@ -304,15 +304,17 @@ class vgg16:
         return cost, predictions
 
 if __name__ == "__main__":
-    imageDir = "./GeneratedImages"
+    imageDir = "./GeneratedImages_Bin2"
 
     vgg = vgg16('vgg16_weights.npz')
     batchSize = 8
+    saveInterval = float("inf")
+
     i = 0
     for imageBatch, classBatch in DataLoader.batchLoader(imageDir, batchSize=batchSize):
         result = vgg.train(imageBatch, classBatch.reshape([batchSize,]))
-        result = (result[0], result[1], classBatch)
-        print(result)
-        if i % 50 == 0:
+        result = (result[0], classBatch.reshape([batchSize]), result[1])
+        print("score: %f, truth: %s, prediction: %s" % result)
+        if i % saveInterval == 0 and i != 0:
             vgg.save_checkpoint()
         i = i + 1
