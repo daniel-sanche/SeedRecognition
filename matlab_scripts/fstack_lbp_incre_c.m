@@ -113,7 +113,7 @@ for p = 1:P
 
         end
 %         imshow(FM(:,:,2),[]);
-        imshow(out);
+        %imshow(out);
     end
     
     %     fprintf('\b\b\b\b\b[%2.0i%%]',round(100*p/P))

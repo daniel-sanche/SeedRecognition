@@ -36,4 +36,4 @@ for j = 1:height
 end
 
 
-sharpnessMap = norm_patch(map);
+sharpnessMap = normPatch(map);

@@ -1,8 +1,8 @@
 function count = max_slice(single_seed_shortname, num_seed)
 
-root = '/Volumes/seagate_backup/raw_image_slice';
+root = '/home/sanche/Datasets/Seed_Images';
 
-config = parse_slice_config('slice_config');
+config = parse_slice_config('/home/sanche/Datasets/Seed_Images/slice_config');
 
 slice_folder = fullfile(root,config.(sprintf('%s',single_seed_shortname)){num_seed,1}{1});
 
