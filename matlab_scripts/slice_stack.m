@@ -1,10 +1,10 @@
-function in_focus = slice_stack(single_seed_shortname, num_seed, num_start, num_end, interval)
+function in_focus = slice_stack(folder_name, range_start_dist, range_end_dist, interval)
 
 root = '/home/sanche/Datasets/Seed_Images';
 
 config = parse_slice_config('/home/sanche/Datasets/Seed_Images/slice_config');
 
-slice_folder = fullfile(root, config.(sprintf('%s',single_seed_shortname)){num_seed,1}{1});
+slice_folder = [root, '/', folder_name];
 
 temp = fullfile(slice_folder, '*.png');
 
@@ -21,6 +21,10 @@ for i = 1:size(files,1)
     end
     
 end
+
+num_images = length(slice_files);
+num_end = num_images - range_end_dist;
+num_start = 1 + range_start_dist;
 
 count = 1;
 
