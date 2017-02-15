@@ -9,7 +9,7 @@ seed_shortname = {'bc'; 'bj'; 'bn'; 'sa'; 'bry'; 'brb';  'cm'; 'cst'; 'cso'; 'sl
 % bottom slice with an interval of 1.
 tic
 for i = 1:30
-    in_focus = slice_stack('nd1413', 0, 0, 1);
+    in_focus = slice_stack('nd1413', 1, 5, 5);
 
     filename = strcat('../mystack/','nd1413','.png');
 

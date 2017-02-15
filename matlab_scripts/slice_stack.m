@@ -1,4 +1,4 @@
-function in_focus = slice_stack(folder_name, range_start_dist, range_end_dist, interval)
+function in_focus = slice_stack(folder_name, start_img, num_images, interval)
 
 root = '/home/sanche/Datasets/Seed_Images';
 
@@ -22,15 +22,15 @@ for i = 1:size(files,1)
     
 end
 
-num_images = length(slice_files);
-num_end = num_images - range_end_dist;
-num_start = 1 + range_start_dist;
-
+total_images = length(slice_files);
 count = 1;
 
-for i = num_start:interval:num_end
-    images{count} = fullfile(slice_folder,slice_files{i});
-    count = count +1;
+for i = start_img:(start_img+num_images-1)
+    idx = start_img+((i-1)*interval);
+    if idx < total_images
+        images{count} = fullfile(slice_folder,slice_files{idx});
+        count = count +1;
+    end
 end
 
 in_focus = fstack_lbp_incre_c(images);
