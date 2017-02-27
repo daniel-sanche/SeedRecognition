@@ -301,7 +301,18 @@ class vgg16:
         _,cost, probs = self.sess.run((self.trainFunc,self.costVal, self.output_probs),
                                             feed_dict={self.imgs: imageMat, self.labels:labelMat})
         predictions = np.argmax(probs,axis=-1)
-        return cost, predictions
+        diff = predictions - labelMat
+        diff[diff != 0] = 1
+        successRate = 1 - diff.mean()
+        return cost, predictions, successRate
+
+    def test(self, imageMat, labelMat):
+        probs = self.sess.run(self.output_probs, feed_dict={self.imgs:imageMat})
+        predictions = np.argmax(probs, axis=-1)
+        diff = predictions - labelMat
+        diff[diff!=0] = 1
+        successRate = 1 - diff.mean()
+        return predictions, successRate
 
 if __name__ == "__main__":
     imageDir = "./GeneratedImages_Bin2"
@@ -311,10 +322,11 @@ if __name__ == "__main__":
     saveInterval = float("inf")
 
     i = 0
-    for imageBatch, classBatch in DataLoader.batchLoader(imageDir, batchSize=batchSize):
+    index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
+    for imageBatch, classBatch in DataLoader.batchLoader(imageDir, index, batchSize=batchSize):
         result = vgg.train(imageBatch, classBatch.reshape([batchSize,]))
-        result = (result[0], classBatch.reshape([batchSize]), result[1])
-        print("score: %f, truth: %s, prediction: %s" % result)
+        result = (result[0], classBatch.reshape([batchSize]), result[1], result[2])
+        print("score: %f, truth: %s, prediction: %s successRate: %f" % result)
         if i % saveInterval == 0 and i != 0:
             vgg.save_checkpoint()
         i = i + 1
