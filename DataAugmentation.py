@@ -1,8 +1,12 @@
 import numpy as np
-from scipy.misc import imresize
-from skimage import exposure
-from scipy.ndimage import rotate, interpolation
+from scipy.misc import imresize, imsave
+from skimage import exposure, morphology
+from scipy.ndimage import rotate, interpolation, binary_fill_holes
+from skimage.color import rgb2hsv, rgb2gray
 import random
+from skimage.filters import sobel, gaussian
+from skimage.measure import label
+from skimage.morphology import convex_hull_image
 
 """
 applies a gamma transformation to color channels
@@ -244,6 +248,37 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     yMax = yMin + imageMat.shape[2]
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
+def threshold(imageMat):
+    img = imageMat[0,:,:,:]
+    bw = rgb2gray(img)
+    hsv = rgb2hsv(img)
+
+    sobelImg = sobel(hsv[:,:,1])
+    sobelImg = gaussian(sobelImg, sigma=1.0)
+    sobelImg = sobelImg / sobelImg.max()
+    sobelImg[sobelImg<0.2] = 0
+
+    sobelMask = np.ones(sobelImg.shape)
+    sobelMask[sobelImg==0] = 0
+
+
+    label_image = label(sobelMask)
+    highestVal = 0
+    highestLabel = 1
+    for i in range(1, label_image.max()+1):
+        thisCount = len(label_image[label_image==i])
+        if thisCount > highestVal:
+            highestVal = thisCount
+            highestLabel = i
+    for i in range(1, label_image.max() + 1):
+        if i != highestLabel:
+            label_image[label_image==i] = 0
+    sobelMask[label_image!=highestLabel] = 0
+    sobelMask = binary_fill_holes(sobelMask)
+    sobelMask = convex_hull_image(sobelMask)
+
+    img[sobelMask == 0] = 0
+
 """
 Used to modify a augment a single image
 """
@@ -269,6 +304,9 @@ def ModifyImage(img, seed=None,
 
     #inisitalize transform dict
     logDict = {"seedVal":seed}
+
+    #threshold the image
+    threshold(img)
 
     #add mirrored versions to the base images
     img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=logDict)
