@@ -95,6 +95,15 @@ class VGG:
         loss = self.model.train_on_batch(imageMat, oneHotLabels)
         print("{}: {}: {} {}".format(self.model.metrics_names[0], loss[0], self.model.metrics_names[1], loss[1]))
 
+    def predict(self, imageMat, probabilities=False):
+        if probabilities:
+            results = self.model.predict(imageMat, batch_size=imageMat.shape[0], verbose=0)
+        else:
+            results = self.model.predict_classes(imageMat, batch_size=imageMat.shape[0], verbose=0)
+        print(results)
+        return results
+
+
     def launch_server(self):
         server.launch(self.model, classes=[str(i) for i in range(30)])
 
@@ -110,4 +119,6 @@ if __name__ == "__main__":
     index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
     for imageBatch, classBatch in DataLoader.batchLoader(imageDir, index, batchSize=batchSize):
         vggModel.train(imageBatch, classBatch.reshape([batchSize,]))
+        #vggModel.predict(imageBatch, probabilities=True)
+
 
