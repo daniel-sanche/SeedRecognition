@@ -73,22 +73,30 @@ class VGG:
 
 
     # weights location: https://gist.github.com/baraldilorenzo/07d7802847aaad0a35d3
-    def loadWeights(self, weights_path):
-        f = h5py.File(weights_path)
-        for k in range(f.attrs['nb_layers']):
-            if k >= len(self.model.layers) - 1:
-                # we don't look at the last two layers in the savefile (fully-connected and activation)
-                break
-            g = f['layer_{}'.format(k)]
-            weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
-            layer = self.model.layers[k]
-            if layer.__class__.__name__ in ['Convolution1D', 'Convolution2D', 'Convolution3D', 'AtrousConvolution2D']:
-                weights[0] = np.transpose(weights[0], (2, 3, 1, 0))
+    def loadWeights(self, checkpointWeights, baseWeights):
+        if os.path.exists(checkpointWeights):
+            print("loading from checkpoint...")
+            self.model.load_weights(checkpointWeights)
+        else:
+            print("loading from vgg base...")
+            f = h5py.File(baseWeights)
+            for k in range(f.attrs['nb_layers']):
+                if k >= len(self.model.layers) - 1:
+                    # we don't look at the last two layers in the savefile (fully-connected and activation)
+                    break
+                g = f['layer_{}'.format(k)]
+                weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
+                layer = self.model.layers[k]
+                if layer.__class__.__name__ in ['Convolution1D', 'Convolution2D', 'Convolution3D', 'AtrousConvolution2D']:
+                    weights[0] = np.transpose(weights[0], (2, 3, 1, 0))
 
-            layer.set_weights(weights)
-
-        f.close()
+                layer.set_weights(weights)
+            f.close()
         print('Model loaded.')
+
+    def save(self, path):
+        print("saving checkpoint...")
+        self.model.save_weights(path, True)
 
     def train(self, imageMat, LabelMat):
         oneHotLabels = to_categorical(LabelMat, nb_classes=self.numClasses)
@@ -111,15 +119,21 @@ class VGG:
 if __name__ == "__main__":
     np.set_printoptions(precision=4)
     imageDir = "./GeneratedImages_Bin2"
+    checkpointName = "./keras_checkpoint.h5"
+    baseName = "vgg16_weights_keras.h5"
     batchSize = 8
+    saveInterval = 5
 
     vggModel = VGG()
-    vggModel.loadWeights("vgg16_weights_keras.h5")
+    vggModel.loadWeights(checkpointName, baseName)
     #vggModel.launch_server()
 
+    i=0
     index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
     for imageBatch, classBatch in DataLoader.batchLoader(imageDir, index, batchSize=batchSize):
         vggModel.train(imageBatch, classBatch.reshape([batchSize,]))
         #vggModel.predict(imageBatch, probabilities=True)
-
+        if i % saveInterval == 0 and i != 0:
+            vggModel.save(checkpointName)
+        i = i + 1
 
