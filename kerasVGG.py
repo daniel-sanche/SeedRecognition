@@ -93,7 +93,7 @@ class VGG:
         for i in range(LabelMat.shape[0]):
             oneHotLabels[i,LabelMat[i]] = 1
         loss = self.model.train_on_batch(imageMat, oneHotLabels)
-        print("batch loss {}".format(loss))
+        print("{}: {}: {} {}".format(self.model.metrics_names[0], loss[0], self.model.metrics_names[1], loss[1]))
 
     def launch_server(self):
         server.launch(self.model, classes=[str(i) for i in range(30)])
