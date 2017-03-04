@@ -10,11 +10,12 @@ from keras import backend as K
 from quiver_engine import server
 from keras.models import Sequential
 from keras.layers import Convolution2D, ZeroPadding2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras import optimizers
 from flask import jsonify
 import h5py
 import os
 import DataLoader
-from sklearn.preprocessing import OneHotEncoder
+from keras.utils.np_utils import to_categorical
 
 # build the VGG16 network
 class VGG:
@@ -63,8 +64,9 @@ class VGG:
         model.add(Dropout(0.5))
         model.add(Dense(numClasses, activation='softmax'))
 
-        model.compile(optimizer='adam',
-                      loss='binary_crossentropy',
+        opt = optimizers.Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        model.compile(optimizer=opt,
+                      loss='categorical_crossentropy',
                       metrics=['accuracy'])
         self.model = model
         self.numClasses = numClasses
@@ -89,9 +91,7 @@ class VGG:
         print('Model loaded.')
 
     def train(self, imageMat, LabelMat):
-        oneHotLabels = np.zeros([imageMat.shape[0], self.numClasses])
-        for i in range(LabelMat.shape[0]):
-            oneHotLabels[i,LabelMat[i]] = 1
+        oneHotLabels = to_categorical(LabelMat, nb_classes=self.numClasses)
         loss = self.model.train_on_batch(imageMat, oneHotLabels)
         print("{}: {}: {} {}".format(self.model.metrics_names[0], loss[0], self.model.metrics_names[1], loss[1]))
 
@@ -109,6 +109,7 @@ class VGG:
 
 
 if __name__ == "__main__":
+    np.set_printoptions(precision=4)
     imageDir = "./GeneratedImages_Bin2"
     batchSize = 8
 
