@@ -12,10 +12,13 @@ from keras.models import Sequential
 from keras.layers import Convolution2D, ZeroPadding2D, MaxPooling2D, Flatten, Dense, Dropout
 from flask import jsonify
 import h5py
+import os
+import DataLoader
+from sklearn.preprocessing import OneHotEncoder
 
 # build the VGG16 network
 class VGG:
-    def __init__(self):
+    def __init__(self, numClasses=30):
         model = Sequential()
         model.add(ZeroPadding2D((1, 1), input_shape=(224, 224, 3)))
         model.add(Convolution2D(64, 3, 3, activation='relu'))
@@ -58,8 +61,14 @@ class VGG:
         model.add(Dropout(0.5))
         model.add(Dense(4096, activation='relu'))
         model.add(Dropout(0.5))
-        model.add(Dense(30, activation='softmax'))
+        model.add(Dense(numClasses, activation='softmax'))
+
+        model.compile(optimizer='adam',
+                      loss='binary_crossentropy',
+                      metrics=['accuracy'])
         self.model = model
+        self.numClasses = numClasses
+
 
     # weights location: https://gist.github.com/baraldilorenzo/07d7802847aaad0a35d3
     def loadWeights(self, weights_path):
@@ -79,9 +88,26 @@ class VGG:
         f.close()
         print('Model loaded.')
 
-    def display(self):
+    def train(self, imageMat, LabelMat):
+        oneHotLabels = np.zeros([imageMat.shape[0], self.numClasses])
+        for i in range(LabelMat.shape[0]):
+            oneHotLabels[i,LabelMat[i]] = 1
+        loss = self.model.train_on_batch(imageMat, oneHotLabels)
+        print("batch loss {}".format(loss))
+
+    def launch_server(self):
         server.launch(self.model, classes=[str(i) for i in range(30)])
 
-vggModel = VGG()
-vggModel.loadWeights("vgg16_weights_keras.h5")
-vggModel.display()
+
+if __name__ == "__main__":
+    imageDir = "./GeneratedImages_Bin2"
+    batchSize = 8
+
+    vggModel = VGG()
+    vggModel.loadWeights("vgg16_weights_keras.h5")
+    #vggModel.launch_server()
+
+    index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
+    for imageBatch, classBatch in DataLoader.batchLoader(imageDir, index, batchSize=batchSize):
+        vggModel.train(imageBatch, classBatch.reshape([batchSize,]))
+
