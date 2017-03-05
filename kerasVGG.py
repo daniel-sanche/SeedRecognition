@@ -99,8 +99,7 @@ class VGG:
         print("saving checkpoint...")
         self.model.save_weights(path, True)
 
-    def train(self, imageMat, LabelMat):
-        oneHotLabels = to_categorical(LabelMat, nb_classes=self.numClasses)
+    def train(self, imageMat, oneHotLabels):
         loss = self.model.train_on_batch(imageMat, oneHotLabels)
         print("{}: {}: {} {}".format(self.model.metrics_names[0], loss[0], self.model.metrics_names[1], loss[1]))
 
@@ -112,8 +111,7 @@ class VGG:
         print(results)
         return results
 
-    def test(self, imageMat, labelMat):
-        oneHotLabels = to_categorical(labelMat, nb_classes=self.numClasses)
+    def test(self, imageMat, oneHotLabels):
         results = self.model.test_on_batch(imageMat, oneHotLabels)
         print("{}: {}: {} {}".format(self.model.metrics_names[0], results[0], self.model.metrics_names[1], results[1]))
         return results
@@ -136,10 +134,11 @@ if __name__ == "__main__":
 
     i=0
     index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
-    for imageBatch, classBatch in DataLoader.batchLoader(imageDir, index, batchSize=batchSize):
-        vggModel.train(imageBatch, classBatch.reshape([batchSize,]))
+    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(imageDir, index, batchSize=batchSize))
+    for imageBatch, classBatch in batchGenerator:
+        vggModel.train(imageBatch, classBatch)
         #vggModel.predict(imageBatch, probabilities=True)
-        #vggModel.test(imageBatch, classBatch.reshape([batchSize,]))
+        #vggModel.test(imageBatch, classBatch)
         if i % saveInterval == 0 and i != 0:
             vggModel.save(checkpointName)
         i = i + 1

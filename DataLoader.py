@@ -2,6 +2,7 @@ import os
 import random
 import numpy as np
 from scipy.misc import imread, imresize
+from keras.utils.np_utils import to_categorical
 
 
 """
@@ -53,6 +54,23 @@ def batchLoader(imageDir, indexReader, imageSize=224, batchSize=64):
             thisBatch[i,:,:,:] = thisImage
             labelBatch[i] = classVal
         yield thisBatch, labelBatch
+
+
+"""
+takes in a batch loader generator, and changes the labels to be in the one-hot format
+
+Params:
+    batchLoader:    a batch loader generator that yeilds imageBatch, labelBath pairs
+    numClasses:     the number of classes possible for the labels
+Yields:
+    [0]:    a numpy matrix containing a batch of images
+    [1]:    a numpy array of one-hot labels for each image
+"""
+def oneHotWrapper(batchLoader, numClasses=30):
+    for img, label in batchLoader:
+        label = label.reshape([img.shape[0],])
+        oneHotLabels = to_categorical(label, nb_classes=numClasses)
+        yield img, oneHotLabels
 
 
 if __name__ == "__main__":
