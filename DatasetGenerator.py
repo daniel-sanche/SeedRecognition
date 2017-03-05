@@ -143,7 +143,7 @@ def imageAugmentor(rawImageLoader, seed=None):
         print("seed used: " + str(seed))
     while True:
         img, classNum, filePath = next(rawImageLoader)
-        augmentedImg, metadata = ModifyImage(img, seed=seed)
+        augmentedImg, metadata = ModifyImage(img, classNum, seed=seed)
         seed = seed + 1
         metadata["class"] = classNum
         metadata["origImgPath"] = filePath

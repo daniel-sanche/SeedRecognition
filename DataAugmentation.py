@@ -8,6 +8,7 @@ from skimage.filters import sobel, gaussian
 from skimage.measure import label
 from skimage.morphology import convex_hull_image, watershed
 from skimage import  segmentation
+from time import gmtime, strftime
 
 """
 applies a gamma transformation to color channels
@@ -249,80 +250,90 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     yMax = yMin + imageMat.shape[2]
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
-def threshold(imageMat):
+def threshold(imageMat, classNum):
 
-    img = imageMat[0,:,:,:]
-    r = img[:,:,0]
+    fuzzyClasses = ['6','7','8','12']
+    glassClasses = ['9','10','13','16','17','18']
+    darkClasses = ['1','2','3','5','11','14','25','26','27','19','28','29']
+
+
+    if classNum in fuzzyClasses:
+        thresholdFuzzy(imageMat)
+    elif classNum in glassClasses:
+        pass
+    elif classNum in darkClasses:
+        pass
+    else:
+        pass
+
+
+def thresholdFuzzy(imageMat):
+    img = imageMat[0, :, :, :]
+    time = strftime("%H:%M:%S+0000", gmtime())
+
+    r = img[:, :, 0]
     g = img[:, :, 1]
     b = img[:, :, 2]
     hsv = rgb2hsv(img)
-    h = hsv[:,:,0]
+    h = hsv[:, :, 0]
     s = hsv[:, :, 1]
     v = hsv[:, :, 2]
-    edgeImg = sobel(v)
-    edgeMask = np.zeros(edgeImg.shape, dtype=int)
-    edgeMask[edgeImg > 0.01] = 1
-    edgeMask[:,0] = 1
-    edgeMask[:,-1] = 1
-    edgeMask = segmentation.clear_border(edgeMask)
+
 
     totalMask = np.ones(h.shape, dtype=int)
 
-    #mask out high hues touching border
+    # mask out high hues touching border
     hMask = np.zeros(h.shape, dtype=int)
-    hMask[h>0.4] = 1
-    hMask[edgeMask==1] = 0
+    hMask[h > 0.4] = 1
     nonBorder = segmentation.clear_border(hMask)
-    hMask[nonBorder==1] = 0
-    totalMask[hMask==1] = 0
+    hMask[nonBorder == 1] = 0
+    totalMask[hMask == 1] = 0
 
-
-    #mask out low blue touching border
+    # mask out low blue touching border
     bMask = np.zeros(h.shape, dtype=int)
     bMask[b < 0.2] = 1
     nonBorder = segmentation.clear_border(bMask)
-    bMask[nonBorder==1] = 0
-    totalMask[bMask==1] = 0
+    bMask[nonBorder == 1] = 0
+    totalMask[bMask == 1] = 0
 
-    #clear out low saturation
-    s[img[:,:,0]==0] = 0
+    # clear out low saturation
+    s[img[:, :, 0] == 0] = 0
     sMask = np.zeros(s.shape, dtype=int)
-    sMask[s<0.1] = 1
+    sMask[s < 0.15] = 1
     nonBorder = segmentation.clear_border(sMask)
     sMask[nonBorder == 1] = 0
     totalMask[sMask == 1] = 0
 
-    #check if any of the previous methods worked
-    #if not, do another s threshold
-    numBlack = totalMask[totalMask==0].shape[0]
-    if numBlack<1000:
+    # check if any of the previous methods worked
+    # if not, do another s threshold
+    numBlack = totalMask[totalMask == 0].shape[0]
+    if numBlack < 1000:
         sMask = np.zeros(s.shape, dtype=int)
         sMask[s < 0.4] = 1
         nonBorder = segmentation.clear_border(sMask)
         sMask[nonBorder == 1] = 0
         totalMask[sMask == 1] = 0
 
-    #keep only largest region
+    # keep only largest region
     labelImg = label(totalMask)
     highestVal = 0
     highestLabel = 1
-    for i in range(1, labelImg.max()+1):
-        thisCount = len(labelImg[labelImg==i])
+    for i in range(1, labelImg.max() + 1):
+        thisCount = len(labelImg[labelImg == i])
         if thisCount > highestVal:
             highestVal = thisCount
             highestLabel = i
-    totalMask[labelImg!=highestLabel] = 0
-
-
+    totalMask[labelImg != highestLabel] = 0
 
     img[totalMask==0] = 0
-    imsave("test.png", img)
-
+    imsave("./fuzzy/" + time + ".png", img)
+    imsave("test.png", b)
+    print("fuzzy")
 
 """
 Used to modify a augment a single image
 """
-def ModifyImage(img, seed=None,
+def ModifyImage(img, classNum, seed=None,
                 mirrorLRProb=0.5, mirrorUDProb=0.5,
                 rotationRange=[0,1],
                 contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
@@ -346,7 +357,7 @@ def ModifyImage(img, seed=None,
     logDict = {"seedVal":seed}
 
     #threshold the image
-    threshold(img)
+    threshold(img, classNum)
 
     #add mirrored versions to the base images
     img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=logDict)
