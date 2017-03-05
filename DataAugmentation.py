@@ -284,47 +284,19 @@ def thresholdFuzzy(imageMat):
 
     # mask out high hues touching border
     hMask = np.zeros(h.shape, dtype=int)
-    hMask[h > 0.4] = 1
+    hMask[h > 0.1] = 1
     nonBorder = segmentation.clear_border(hMask)
     hMask[nonBorder == 1] = 0
     totalMask[hMask == 1] = 0
 
-    # mask out low blue touching border
-    bMask = np.zeros(h.shape, dtype=int)
-    bMask[b < 0.2] = 1
-    nonBorder = segmentation.clear_border(bMask)
-    bMask[nonBorder == 1] = 0
-    totalMask[bMask == 1] = 0
+    rgRatio = r/g
+    rgRatio[rgRatio>1.6] = 1
+    rgRatio[rgRatio!=1] = 0
+    nonBorder = segmentation.clear_border(rgRatio)
+    rgRatio[nonBorder==1] = 0
+    totalMask[rgRatio==1] = 0
 
-    # clear out low saturation
-    s[img[:, :, 0] == 0] = 0
-    sMask = np.zeros(s.shape, dtype=int)
-    sMask[s < 0.15] = 1
-    nonBorder = segmentation.clear_border(sMask)
-    sMask[nonBorder == 1] = 0
-    totalMask[sMask == 1] = 0
-
-    # check if any of the previous methods worked
-    # if not, do another s threshold
-    numBlack = totalMask[totalMask == 0].shape[0]
-    if numBlack < 1000:
-        sMask = np.zeros(s.shape, dtype=int)
-        sMask[s < 0.4] = 1
-        nonBorder = segmentation.clear_border(sMask)
-        sMask[nonBorder == 1] = 0
-        totalMask[sMask == 1] = 0
-
-    # keep only largest region
-    labelImg = label(totalMask)
-    highestVal = 0
-    highestLabel = 1
-    for i in range(1, labelImg.max() + 1):
-        thisCount = len(labelImg[labelImg == i])
-        if thisCount > highestVal:
-            highestVal = thisCount
-            highestLabel = i
-    totalMask[labelImg != highestLabel] = 0
-
+    imsave("orig.png", img)
     img[totalMask==0] = 0
     imsave("./fuzzy/" + time + ".png", img)
     imsave("test.png", b)
