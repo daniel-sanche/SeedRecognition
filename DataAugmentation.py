@@ -6,7 +6,8 @@ from skimage.color import rgb2hsv, rgb2gray
 import random
 from skimage.filters import sobel, gaussian
 from skimage.measure import label
-from skimage.morphology import convex_hull_image
+from skimage.morphology import convex_hull_image, watershed
+from skimage import  segmentation
 
 """
 applies a gamma transformation to color channels
@@ -249,35 +250,35 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
 def threshold(imageMat):
+
     img = imageMat[0,:,:,:]
-    bw = rgb2gray(img)
+
     hsv = rgb2hsv(img)
 
-    sobelImg = sobel(hsv[:,:,1])
-    sobelImg = gaussian(sobelImg, sigma=1.0)
-    sobelImg = sobelImg / sobelImg.max()
-    sobelImg[sobelImg<0.2] = 0
+    combined = np.concatenate((img, hsv), -1)
 
-    sobelMask = np.ones(sobelImg.shape)
-    sobelMask[sobelImg==0] = 0
+    edgeImg = sobel(hsv[:,:,2])
+
+    seed_mask = np.zeros(combined.shape, dtype=np.int)
+    seed_mask[edgeImg>0.03] = 2
+    seed_mask[:, :50, :] = 0
+    seed_mask[:, -50:, :] = 0
+
+    seed_mask[:, :5, :] = 1  # background
+    seed_mask[:5, :, :] = 1 # background
+    seed_mask[:, -5:, :] = 1  # background
+    seed_mask[-5:, :, :] = 1
+    imsave("test.png", seed_mask[:,:,0]-1)
 
 
-    label_image = label(sobelMask)
-    highestVal = 0
-    highestLabel = 1
-    for i in range(1, label_image.max()+1):
-        thisCount = len(label_image[label_image==i])
-        if thisCount > highestVal:
-            highestVal = thisCount
-            highestLabel = i
-    for i in range(1, label_image.max() + 1):
-        if i != highestLabel:
-            label_image[label_image==i] = 0
-    sobelMask[label_image!=highestLabel] = 0
-    sobelMask = binary_fill_holes(sobelMask)
-    sobelMask = convex_hull_image(sobelMask)
+    seg = watershed(combined, seed_mask)
+    #flatten into 2D
+    seg = np.amin(seg, axis=-1)
 
-    img[sobelMask == 0] = 0
+    img[seg==1] = 0
+
+    imsave("test.png", img)
+
 
 """
 Used to modify a augment a single image
