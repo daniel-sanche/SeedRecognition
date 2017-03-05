@@ -259,13 +259,16 @@ def threshold(imageMat):
     h = hsv[:,:,0]
     s = hsv[:, :, 1]
     v = hsv[:, :, 2]
+    edgeImg = sobel(v)
 
     #mask out high hues touching border
     hMask = np.zeros(h.shape, dtype=int)
     hMask[h>0.4] = 1
+    hMask[edgeImg>0.01] = 0
     nonBorder = segmentation.clear_border(hMask)
     hMask[nonBorder==1] = 0
     img[hMask==1] = 0
+
 
     #mask out low blue touching border
     bMask = np.zeros(h.shape, dtype=int)
@@ -278,7 +281,10 @@ def threshold(imageMat):
     s[img[:,:,0]==0] = 0
     sMask = np.zeros(s.shape, dtype=int)
     sMask[s<0.1] = 1
-    #img[sMask == 1] = 0
+    nonBorder = segmentation.clear_border(sMask)
+    sMask[nonBorder == 1] = 0
+    img[sMask == 1] = 0
+
 
     imsave("test.png", img)
 
