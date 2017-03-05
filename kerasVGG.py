@@ -64,7 +64,8 @@ class VGG:
         model.add(Dropout(0.5))
         model.add(Dense(numClasses, activation='softmax'))
 
-        opt = optimizers.Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        #opt = optimizers.Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        opt = optimizers.SGD(lr=1e-4)
         model.compile(optimizer=opt,
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
@@ -111,6 +112,11 @@ class VGG:
         print(results)
         return results
 
+    def test(self, imageMat, labelMat):
+        oneHotLabels = to_categorical(labelMat, nb_classes=self.numClasses)
+        results = self.model.test_on_batch(imageMat, oneHotLabels)
+        print("{}: {}: {} {}".format(self.model.metrics_names[0], results[0], self.model.metrics_names[1], results[1]))
+        return results
 
     def launch_server(self):
         server.launch(self.model, classes=[str(i) for i in range(30)])
@@ -122,7 +128,7 @@ if __name__ == "__main__":
     checkpointName = "./keras_checkpoint.h5"
     baseName = "vgg16_weights_keras.h5"
     batchSize = 8
-    saveInterval = 5
+    saveInterval = 50
 
     vggModel = VGG()
     vggModel.loadWeights(checkpointName, baseName)
@@ -133,6 +139,7 @@ if __name__ == "__main__":
     for imageBatch, classBatch in DataLoader.batchLoader(imageDir, index, batchSize=batchSize):
         vggModel.train(imageBatch, classBatch.reshape([batchSize,]))
         #vggModel.predict(imageBatch, probabilities=True)
+        #vggModel.test(imageBatch, classBatch.reshape([batchSize,]))
         if i % saveInterval == 0 and i != 0:
             vggModel.save(checkpointName)
         i = i + 1
