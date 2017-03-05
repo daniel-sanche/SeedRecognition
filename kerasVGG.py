@@ -99,9 +99,8 @@ class VGG:
         print("saving checkpoint...")
         self.model.save_weights(path, True)
 
-    def train(self, imageMat, oneHotLabels):
-        loss = self.model.train_on_batch(imageMat, oneHotLabels)
-        print("{}: {}: {} {}".format(self.model.metrics_names[0], loss[0], self.model.metrics_names[1], loss[1]))
+    def train(self, batchGenerator, numRounds=1000):
+        self.model.fit_generator(batchGenerator, samples_per_epoch=numRounds, nb_epoch=1, verbose=True)
 
     def predict(self, imageMat, probabilities=False):
         if probabilities:
@@ -135,11 +134,5 @@ if __name__ == "__main__":
     i=0
     index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
     batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(imageDir, index, batchSize=batchSize))
-    for imageBatch, classBatch in batchGenerator:
-        vggModel.train(imageBatch, classBatch)
-        #vggModel.predict(imageBatch, probabilities=True)
-        #vggModel.test(imageBatch, classBatch)
-        if i % saveInterval == 0 and i != 0:
-            vggModel.save(checkpointName)
-        i = i + 1
+    vggModel.train(batchGenerator)
 
