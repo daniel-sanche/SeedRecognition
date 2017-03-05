@@ -15,6 +15,7 @@ if __name__ == "__main__":
     successCount = 0.0
     for dirNum in range(1,7):
         thisDir = "p" + str(dirNum) + "_45_first"
+        print(thisDir)
         imageDir = os.path.join(imageRoot, thisDir)
         fileReader = DataLoader.groundTruthReader(os.path.join(imageDir, 'p'+str(dirNum)+'_groundtruth.txt'))
         batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(imageDir, fileReader, batchSize=batchSize))
