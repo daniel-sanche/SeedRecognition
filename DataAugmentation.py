@@ -287,6 +287,16 @@ def threshold(imageMat):
     sMask[nonBorder == 1] = 0
     totalMask[sMask == 1] = 0
 
+    #check if any of the previous methods worked
+    #if not, do another s threshold
+    numBlack = totalMask[totalMask==0].shape[0]
+    if numBlack<1000:
+        sMask = np.zeros(s.shape, dtype=int)
+        sMask[s < 0.4] = 1
+        nonBorder = segmentation.clear_border(sMask)
+        sMask[nonBorder == 1] = 0
+        totalMask[sMask == 1] = 0
+
     #keep only largest region
     labelImg = label(totalMask)
     highestVal = 0
@@ -297,6 +307,8 @@ def threshold(imageMat):
             highestVal = thisCount
             highestLabel = i
     totalMask[labelImg!=highestLabel] = 0
+
+
 
     img[totalMask==0] = 0
     imsave("test.png", img)
