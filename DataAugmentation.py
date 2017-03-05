@@ -252,30 +252,33 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
 def threshold(imageMat):
 
     img = imageMat[0,:,:,:]
-
+    r = img[:,:,0]
+    g = img[:, :, 1]
+    b = img[:, :, 2]
     hsv = rgb2hsv(img)
+    h = hsv[:,:,0]
+    s = hsv[:, :, 1]
+    v = hsv[:, :, 2]
 
-    combined = np.concatenate((img, hsv), -1)
+    #mask out high hues touching border
+    hMask = np.zeros(h.shape, dtype=int)
+    hMask[h>0.4] = 1
+    nonBorder = segmentation.clear_border(hMask)
+    hMask[nonBorder==1] = 0
+    img[hMask==1] = 0
 
-    edgeImg = sobel(hsv[:,:,2])
+    #mask out low blue touching border
+    bMask = np.zeros(h.shape, dtype=int)
+    bMask[b < 0.2] = 1
+    nonBorder = segmentation.clear_border(bMask)
+    bMask[nonBorder==1] = 0
+    img[bMask==1] = 0
 
-    seed_mask = np.zeros(combined.shape, dtype=np.int)
-    seed_mask[edgeImg>0.03] = 2
-    seed_mask[:, :50, :] = 0
-    seed_mask[:, -50:, :] = 0
-
-    seed_mask[:, :5, :] = 1  # background
-    seed_mask[:5, :, :] = 1 # background
-    seed_mask[:, -5:, :] = 1  # background
-    seed_mask[-5:, :, :] = 1
-    imsave("test.png", seed_mask[:,:,0]-1)
-
-
-    seg = watershed(combined, seed_mask)
-    #flatten into 2D
-    seg = np.amin(seg, axis=-1)
-
-    img[seg==1] = 0
+    #clear out low saturation
+    s[img[:,:,0]==0] = 0
+    sMask = np.zeros(s.shape, dtype=int)
+    sMask[s<0.1] = 1
+    #img[sMask == 1] = 0
 
     imsave("test.png", img)
 
