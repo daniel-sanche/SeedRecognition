@@ -115,8 +115,11 @@ class VGG:
         print("{}: {}: {} {}".format(self.model.metrics_names[0], results[0], self.model.metrics_names[1], results[1]))
         return results
 
-    def launch_server(self):
-        server.launch(self.model, classes=[str(i) for i in range(30)])
+    def launch_server(self, imgFolder="GeneratedImages_Bin2"):
+        names = ['bc', 'bj', 'bn', 'sa', 'bry', 'brb',  'cm', 'cst', 'cso', 'sl',\
+                 'cbp', 'brc', 'cd', 'ds', 'brp', 'sf1', 'sii1', 'siv1', 'sp1', 'sv1',\
+                 'cca', 'cch', 'cgr', 'cme', 'cpe', 'ahy', 'apacc', 'apr', 'apo', 'are']
+        server.launch(self.model, classes=names, input_folder=imgFolder)
 
 
 if __name__ == "__main__":
@@ -129,10 +132,10 @@ if __name__ == "__main__":
 
     vggModel = VGG()
     vggModel.loadWeights(checkpointName, baseName)
-    #vggModel.launch_server()
+    vggModel.launch_server("/home/sanche/Datasets/Seed_Test/p1_45_first")
 
     i=0
     index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
     batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(imageDir, index, batchSize=batchSize))
-    vggModel.train(batchGenerator)
+    #vggModel.train(batchGenerator)
 
