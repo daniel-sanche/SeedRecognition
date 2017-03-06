@@ -147,7 +147,7 @@ def imageAugmentor(rawImageLoader, seed=None):
         seed = seed + 1
         metadata["class"] = classNum
         metadata["origImgPath"] = filePath
-        yield img, metadata
+        yield augmentedImg, metadata
 
 """
 This function will create the generated image dataset
