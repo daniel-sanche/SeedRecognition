@@ -19,12 +19,12 @@ Yeilds:
 """
 def generatedDatasetParser(folderPath):
     print("loading data from %s" % folderPath)
-    indexFilePath = os.join(folderPath, "index.tsv")
+    indexFilePath = os.path.join(folderPath, "index.tsv")
     allLines = [line.rstrip().split() for line in open(indexFilePath, 'r')]
     while True:
         random.shuffle(allLines)
         for classVal, fileName in allLines:
-            filePath = os.join(folderPath, fileName)
+            filePath = os.path.join(folderPath, fileName)
             yield filePath, classVal
 
 """

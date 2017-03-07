@@ -99,8 +99,8 @@ class VGG:
         print("saving checkpoint...")
         self.model.save_weights(path, True)
 
-    def train(self, batchGenerator, numRounds=10000):
-        self.model.fit_generator(batchGenerator, samples_per_epoch=numRounds, nb_epoch=3, verbose=True)
+    def train(self, batchGenerator, numRounds=1000):
+        self.model.fit_generator(batchGenerator, samples_per_epoch=numRounds, nb_epoch=1, verbose=True)
 
     def predict(self, imageMat, probabilities=False):
         if probabilities:
@@ -124,7 +124,7 @@ class VGG:
 
 if __name__ == "__main__":
     np.set_printoptions(precision=4)
-    imageDir = "./GeneratedImages_Bin2"
+    imageDir = "./SegmentedTraining_Bin2"
     checkpointName = "./keras_checkpoint.h5"
     baseName = "vgg16_weights_keras.h5"
     batchSize = 8
@@ -135,7 +135,8 @@ if __name__ == "__main__":
     #vggModel.launch_server("/home/sanche/Datasets/Seed_Test/p1_45_first")
 
     i=0
-    index = DataLoader.generatedDatasetParser(imageDir)
-    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(imageDir, index, batchSize=batchSize))
-    vggModel.train(batchGenerator)
-    vggModel.save(checkpointName)
+    parser = DataLoader.generatedDatasetParser(imageDir)
+    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(parser, batchSize=batchSize))
+    while True:
+        vggModel.train(batchGenerator)
+        vggModel.save(checkpointName)
