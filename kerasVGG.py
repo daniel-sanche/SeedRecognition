@@ -110,10 +110,11 @@ class VGG:
         print(results)
         return results
 
-    def test(self, imageMat, oneHotLabels):
-        results = self.model.test_on_batch(imageMat, oneHotLabels)
-        print("{}: {}: {} {}".format(self.model.metrics_names[0], results[0], self.model.metrics_names[1], results[1]))
-        return results
+    def test(self, batchGenerator, numImages):
+        results = self.model.evaluate_generator(batchGenerator, numImages)
+        print("testing complete")
+        for i in range(len(results)):
+            print("\t{}: {}".format(self.model.metrics_names[i], results[i]))
 
     def launch_server(self, imgFolder="GeneratedImages_Bin2"):
         names = ['bc', 'bj', 'bn', 'sa', 'bry', 'brb',  'cm', 'cst', 'cso', 'sl',\

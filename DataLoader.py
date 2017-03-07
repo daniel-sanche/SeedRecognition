@@ -53,7 +53,8 @@ def segmentedDatasetParser(rootDir):
                 fileName = thisLine[0].zfill(6) + ".png"
                 className = thisLine[2]
                 filePath = os.path.join(dirPath, fileName)
-                yield filePath, className
+                if os.path.exists(filePath):
+                    yield filePath, className
 
 """
 loads file and class information from the testing image directory
@@ -81,17 +82,18 @@ def testDatasetParser(rootDir):
                 className = thisLine[2]
                 folderName = thisLine[0].zfill(6)
                 folderPath = os.path.join(dirPath, folderName)
-                for imgFile in os.listdir(folderPath):
-                    if ".png" in imgFile:
-                        imgPath = os.path.join(folderPath, imgFile)
-                        yield imgPath, className
+                if os.path.exists(folderPath):
+                    for imgFile in os.listdir(folderPath):
+                        if ".png" in imgFile:
+                            imgPath = os.path.join(folderPath, imgFile)
+                            yield imgPath, className
 
 """
 loads batches of images from the generated images directory
 
 Params:
     imageDir:       the directory of the generated images
-    indexReader:  an index generator, that yeilds file names and class values
+    indexReader:    an index generator, that yeilds file names and class values
     batchSize:      the number of images in each batch
     imageSize:      the size of the images being extracted
 Yields:
@@ -112,6 +114,21 @@ def batchLoader(indexReader, imageSize=224, batchSize=64):
             labelBatch[i] = classVal
         yield thisBatch, labelBatch
 
+"""
+Finds the number of results in a generator object
+
+Params:
+    generator:    the generator to query
+Returns:
+    [0]:    the number of results in the generator
+"""
+def countResultsInGenerator(generator):
+    count = 0
+    for _ in generator:
+        count += 1
+        if count > 1000000:
+            return float("inf")
+    return count
 
 """
 takes in a batch loader generator, and changes the labels to be in the one-hot format

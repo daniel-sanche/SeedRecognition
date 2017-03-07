@@ -5,21 +5,23 @@ import numpy as np
 
 if __name__ == "__main__":
     checkpointName = "./keras_checkpoint.h5"
+    genPath = "./GeneratedImages_Bin2"
+    segPath = "/home/sanche/Datasets/Seed_Test_Segmented"
+    testPath = "/home/sanche/Datasets/Seed_Test"
 
     vgg = VGG()
     vgg.loadWeights(checkpointName, None)
-    batchSize = 45
+    dataset = testPath
 
-    filesCount = 0
-    successCount = 0.0
-    #parser = DataLoader.segmentedDatasetParser("/home/sanche/Datasets/Seed_Tes_Segmentedt")
-    parser = DataLoader.testDatasetParser("/home/sanche/Datasets/Seed_Test")
-    #parser = DataLoader.generatedDatasetParser("./GeneratedImages_Bin2")
+    if dataset == genPath:
+        fileCount = len([name for name in os.listdir(dataset) if ".png" in name])
+        parser = DataLoader.generatedDatasetParser(dataset)
+    elif dataset == segPath:
+        fileCount = 270
+        parser = DataLoader.segmentedDatasetParser(dataset)
+    else:
+        fileCount = 1400
+        parser = DataLoader.testDatasetParser(dataset)
 
-    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(parser, batchSize=batchSize))
-    for imageBatch, classBatch in batchGenerator:
-        loss, acc = vgg.test(imageBatch, classBatch)
-        result = (loss, acc)
-        filesCount += batchSize
-        successCount += (batchSize * acc)
-    print ("total acc: %f in %d files" % (successCount/filesCount, filesCount))
+    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(parser, batchSize=1))
+    vgg.test(batchGenerator, fileCount)
