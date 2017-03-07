@@ -31,28 +31,34 @@ def getFolderLabels(configPath, validClasses=[25, 4, 23, 12, 22, 1, 6, 21, 24, 3
 
 
 """
-Creates the file list
-This file is a simple csv, with each line consisting of an image path, and it's class
-THis file can then be iterated through to load images into memory for the next batch
-The lines in the file alternate between each class in order, to ensure that each batch will
-have a similar distribution of all classes to prevent bias
+Creates a set of folders to hold a generated dataset
+The source dataset is divided into bins, so that each bin has a different set of source files to prevent testing
+and training on the same images. Each bin will be initialized with a source_images.csv file, containing information
+about the files assigned to this bin. Each bin should have roughly equivalent class distributions
 
 Params:
     dataDir:    the directory that holds the dataset
-    fileName:    the base name for the created csv file. File extension and bin number will be appended
+    dirBaseName:    the base name given to the directory. A bin number will be appended to the end
     configPath: a path to the slice_config file which assiciated folders with classes
     numBins:    the number of bins to divide the resulting images into
                 used for training and validation sets. Each bin will try to have an equal number of all classes
 """
-def createFileList(dataDir, fileName="fileList", configPath="./class_map.txt", num_Bins=1):
-    #check to see if the files already exist
-    existingFiles = []
-    for f in os.listdir("./"):
-        if fileName in f and ".csv" in f:
-            existingFiles.append(f)
-    if len(existingFiles) > 0:
-        print("File Lists already exist")
-        return existingFiles
+def createFileBins(dataDir, dirBaseName="./Training_Bin", configPath="./class_map.txt", num_Bins=1):
+    #check if directories exist
+    if os.path.exists(dirBaseName) or os.path.exists(dirBaseName+"1"):
+        print("bins named " + dirBaseName + " already exist")
+        return
+    #otherwise, create them
+    fileList = []
+    for i in range(num_Bins):
+        if num_Bins > 1:
+            newDirName = dirBaseName+str(i+1)
+        else:
+            newDirName = dirBaseName
+        os.mkdir(newDirName)
+        fileName = os.path.join(newDirName, "source_images.csv")
+        fileList.append(open(fileName, 'w'))
+
     #find all the folders associated with each class
     labelDict = getFolderLabels(configPath)
     #find the set of all files associated with each class
@@ -69,28 +75,17 @@ def createFileList(dataDir, fileName="fileList", configPath="./class_map.txt", n
     for key in classDict:
         random.shuffle(classDict[key])
     #print a csv file that steps through random samples of each class equally
-    outputList = []
-    nameList = []
-    for i in range(1, num_Bins+1):
-        if num_Bins == 1:
-            thisName = fileName + ".csv"
-        else:
-            thisName = fileName + "_" + str(i) + ".csv"
-        nameList.append(thisName)
-        outputList.append(open(thisName, 'w'))
-
     numNotEmpty = 1
     i = 0
     while numNotEmpty > 0:
         numNotEmpty = 0
-        outFile = outputList[i%num_Bins]
+        outFile = fileList[i%num_Bins]
         for key in classDict:
             thisList = classDict[key]
             if len(thisList) > 0:
                 numNotEmpty += 1
                 outFile.write(thisList.pop() + "\t" + str(key) + "\n")
         i += 1
-    return nameList
 
 
 """
@@ -99,8 +94,8 @@ and reads the images into memory. Also performs image scaling and conversion to
 a float representation. Will loop through files indefinitely
 
 Params:
-    dataDir:    the directory that holds the dataset
-    fileListPath:    the path of the file list csv file
+    dataDir:    the directory that holds the raw dataset
+    binDir:     the path to the bin we want to load images for. Created with "createFileBins"
     imageSize:  a vector of 3 values that represents the size all images should be scaled to
                 ex, [500, 500, 3]
     asFloat:    determines whether images should be converted to a float representation
@@ -110,12 +105,13 @@ Yields:
     1:  the image's class number
     2:  the image's relative file path in dataset folder
 """
-def rawImageLoader(dataDir, fileListPath, imageSize=[224, 224, 3], asFloat=True):
-    if not os.path.exists(fileListPath):
-        print("Could not find file %s" % fileListPath)
+def rawImageLoader(dataDir, binDir, imageSize=[224, 224, 3], asFloat=True):
+    sourceFilePath=os.path.join(binDir,"source_images.csv")
+    if not os.path.exists(sourceFilePath):
+        print("Could not find file %s" % sourceFilePath)
         return
     while True:
-        with open(fileListPath) as file:
+        with open(sourceFilePath) as file:
             for line in file:
                 fileSuffix, classNum = line.rstrip().split()
                 fileName = os.path.join(dataDir, fileSuffix)
@@ -190,11 +186,14 @@ def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImag
 #file lists contain the path to an image, and it's class name
 if __name__ == "__main__":
     dataset_path = "/home/sanche/Datasets/Seed_Images"
+    dirBaseName="tmpSegmentedTraining_Bin"
+    numBins=2
 
-    newFileLists = createFileList(dataset_path, fileName="filesInBin", num_Bins=2)
-    for idx, thisFile in enumerate(newFileLists):
-        imgLoader = rawImageLoader(dataset_path, thisFile, [224, 224, 3])
+    createFileBins(dataset_path, dirBaseName="tmpSegmentedTraining_Bin", num_Bins=numBins)
+    for i in range(1, numBins+1):
+        binDir = dirBaseName+str(i)
+        imgLoader = rawImageLoader(dataset_path, binDir, [224, 224, 3])
         augmentor = imageAugmentor(imgLoader)
         print(datetime.now().time())
-        generatedImageSaver(augmentor, numImages=10000, imageDir="SegmentedTraining_Bin"+str(idx+1))
+        generatedImageSaver(augmentor, numImages=10000, imageDir=binDir)
         print(datetime.now().time())
