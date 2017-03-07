@@ -185,7 +185,7 @@ def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImag
 #this function will generate file lists, then load and augment images from the file lists, and save them to new folders
 #file lists contain the path to an image, and it's class name
 if __name__ == "__main__":
-    dataset_path = "/home/sanche/Datasets/Seed_Images"
+    dataset_path = "/home/sanche/Datasets/Seed_Raw"
     dirBaseName="Generated_Bin"
     numBins=2
     numImagesPerBin = 10000

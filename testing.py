@@ -12,9 +12,11 @@ if __name__ == "__main__":
 
     filesCount = 0
     successCount = 0.0
-    #segmentedReader = DataLoader.segmentedDatasetParser("/home/sanche/Datasets/Seed_Test")
-    generatedReader = DataLoader.generatedDatasetParser("./GeneratedImages_Bin2")
-    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(generatedReader, batchSize=batchSize))
+    #parser = DataLoader.segmentedDatasetParser("/home/sanche/Datasets/Seed_Tes_Segmentedt")
+    parser = DataLoader.testDatasetParser("/home/sanche/Datasets/Seed_Test")
+    #parser = DataLoader.generatedDatasetParser("./GeneratedImages_Bin2")
+
+    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(parser, batchSize=batchSize))
     for imageBatch, classBatch in batchGenerator:
         loss, acc = vgg.test(imageBatch, classBatch)
         result = (loss, acc)

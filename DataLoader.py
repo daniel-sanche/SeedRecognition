@@ -7,7 +7,7 @@ from keras.utils.np_utils import to_categorical
 
 """
 loads file and class information from the index file in the generated image directory
-when the index file is finished, it will be shuffled and reading will continue
+generator will keep loading files in order infinitely
 
 Params:
     folderPath:  the path of the generated images folder we want to load
@@ -29,7 +29,7 @@ def generatedDatasetParser(folderPath):
 
 """
 loads file and class information from the index file in the segmented image directory
-when the index file is finished, it will be shuffled and reading will continue
+when all files have been loaded, generator stops
 
 Params:
     rootDir:   the root path of the segmenteeed images we want to load
@@ -54,6 +54,37 @@ def segmentedDatasetParser(rootDir):
                 className = thisLine[2]
                 filePath = os.path.join(dirPath, fileName)
                 yield filePath, className
+
+"""
+loads file and class information from the testing image directory
+when all files have been loaded, generator stops
+
+Params:
+    rootDir:   the root path of the segmenteeed images we want to load
+                the folder is assumed to be structured with a set of 7 inner folders,
+                each containing an index called "px_groundtruth.txt" that has class information
+
+Yeilds:
+    [0]:    the path of the next file to read
+    [1]:    the class label for the next file to read
+"""
+def testDatasetParser(rootDir):
+    print("loading data from %s" % rootDir)
+    for dirNum in range(1, 7):
+        dirName = "p" + str(dirNum) + "_45_first"
+        dirPath = os.path.join(rootDir, dirName)
+        indexName = 'p' + str(dirNum) + '_groundtruth.txt'
+        indexPath = os.path.join(dirPath, indexName)
+        with open(indexPath, 'r') as f:
+            for thisLine in f:
+                thisLine = thisLine.rstrip().split()
+                className = thisLine[2]
+                folderName = thisLine[0].zfill(6)
+                folderPath = os.path.join(dirPath, folderName)
+                for imgFile in os.listdir(folderPath):
+                    if ".png" in imgFile:
+                        imgPath = os.path.join(folderPath, imgFile)
+                        yield imgPath, className
 
 """
 loads batches of images from the generated images directory
