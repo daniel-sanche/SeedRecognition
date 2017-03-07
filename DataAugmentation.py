@@ -153,7 +153,9 @@ Returns:
 def rotateImage(imageMat, rotationPercent=0.5, logDict=None):
     if logDict is not None:
         logDict["Rotation"] = rotationPercent*360
-    return rotate(imageMat, rotationPercent*360, axes=[1,2], reshape=False, mode="nearest")
+    newImg = rotate(imageMat, rotationPercent*360, axes=[1,2], reshape=False, mode="nearest")
+    newImg[newImg<0] = 0
+    return newImg
 
 """
 Mirrors the image left/right or up/down
