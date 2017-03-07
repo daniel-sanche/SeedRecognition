@@ -99,8 +99,8 @@ class VGG:
         print("saving checkpoint...")
         self.model.save_weights(path, True)
 
-    def train(self, batchGenerator, numRounds=1000):
-        self.model.fit_generator(batchGenerator, samples_per_epoch=numRounds, nb_epoch=1, verbose=True)
+    def train(self, batchGenerator, numRounds=10000):
+        self.model.fit_generator(batchGenerator, samples_per_epoch=numRounds, nb_epoch=3, verbose=True)
 
     def predict(self, imageMat, probabilities=False):
         if probabilities:

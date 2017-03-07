@@ -11,20 +11,22 @@ from datetime import  datetime
 finds all image folders associated with each class
 
 Params:
-    configPath:   a path to the slice_config file which assiciated folders with classes
+    configPath:     a path to the slice_config file which assiciated folders with classes
+    validClasses:   the seed classes we are interested in. Others will be ignored
 
 Returns:
     0:  dictionary with classes as keys, and lists of folders as values
 """
-def getFolderLabels(configPath):
+def getFolderLabels(configPath, validClasses=[25, 4, 23, 12, 22, 1, 6, 21, 24, 3, 15, 11, 2, 10, 5]):
     labelDict = {}
-    thisLabel = -1
+    thisLabel = 0
     with open(configPath) as f:
         for line in f:
             number, foldername = line.rstrip().split()
             if number == '1':
                 thisLabel += 1
-            labelDict[foldername] = thisLabel
+            if thisLabel in validClasses:
+                labelDict[foldername] = thisLabel
     return labelDict
 
 
@@ -147,7 +149,7 @@ def imageAugmentor(rawImageLoader, seed=None):
         seed = seed + 1
         metadata["class"] = classNum
         metadata["origImgPath"] = filePath
-        yield img, metadata
+        yield augmentedImg, metadata
 
 """
 This function will create the generated image dataset

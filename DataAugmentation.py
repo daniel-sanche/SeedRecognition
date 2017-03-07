@@ -91,7 +91,7 @@ def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0, logDict=None):
     xCenter = (half * centerX) + half
     yCenter = (half * centerY) + half
     grad = _makeGradMask(largerSide, radius=largerSide * radPercent, center=[xCenter, yCenter])
-    grad = imresize(grad, [imageMat.shape[1], imageMat.shape[2]]) / 255
+    grad = imresize(grad, [imageMat.shape[1], imageMat.shape[2]])
     grad = np.tile(grad, (3,1,1)).transpose(1,2,0)
     return imageMat * grad
 
@@ -369,7 +369,7 @@ def ModifyImage(img, classNum, seed=None,
         img = addGausianNoise(img, mean=random.uniform(noiseMeanRange[0], noiseMeanRange[1]),
                                     std=random.uniform(noiseStdRange[0], noiseStdRange[1]),
                                 logDict=logDict)
-    return img, logDict
+    return img.reshape([img.shape[1], img.shape[2], img.shape[3]]), logDict
 
 
 
