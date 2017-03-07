@@ -19,9 +19,9 @@ from keras.utils.np_utils import to_categorical
 
 # build the VGG16 network
 class VGG:
-    def __init__(self, numClasses=30):
+    def __init__(self, imageSize=[224,224,3], numClasses=30):
         model = Sequential()
-        model.add(ZeroPadding2D((1, 1), input_shape=(224, 224, 3)))
+        model.add(ZeroPadding2D((1, 1), input_shape=imageSize))
         model.add(Convolution2D(64, 3, 3, activation='relu'))
         model.add(ZeroPadding2D((1, 1)))
         model.add(Convolution2D(64, 3, 3, activation='relu'))
@@ -124,7 +124,7 @@ class VGG:
 
 if __name__ == "__main__":
     np.set_printoptions(precision=4)
-    datasetDir = "./SegmentedTraining_Bin2"
+    datasetDir = "./Generated_Bin1"
     datasetSize = len([name for name in os.listdir(datasetDir) if ".png" in name])
     checkpointName = "./keras_checkpoint.h5"
     baseName = "vgg16_weights_keras.h5"

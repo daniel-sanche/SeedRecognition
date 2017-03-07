@@ -186,14 +186,16 @@ def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImag
 #file lists contain the path to an image, and it's class name
 if __name__ == "__main__":
     dataset_path = "/home/sanche/Datasets/Seed_Images"
-    dirBaseName="tmpSegmentedTraining_Bin"
+    dirBaseName="Generated_Bin"
     numBins=2
+    numImagesPerBin = 10000
+    imageSize = [224, 224, 3]
 
-    createFileBins(dataset_path, dirBaseName="tmpSegmentedTraining_Bin", num_Bins=numBins)
+    createFileBins(dataset_path, dirBaseName=dirBaseName, num_Bins=numBins)
     for i in range(1, numBins+1):
         binDir = dirBaseName+str(i)
-        imgLoader = rawImageLoader(dataset_path, binDir, [224, 224, 3])
+        imgLoader = rawImageLoader(dataset_path, binDir, imageSize=imageSize)
         augmentor = imageAugmentor(imgLoader)
         print(datetime.now().time())
-        generatedImageSaver(augmentor, numImages=10000, imageDir=binDir)
+        generatedImageSaver(augmentor, numImages=numImagesPerBin, imageDir=binDir)
         print(datetime.now().time())
