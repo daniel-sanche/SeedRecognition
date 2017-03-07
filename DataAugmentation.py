@@ -2,12 +2,13 @@ import numpy as np
 from scipy.misc import imresize, imsave
 from skimage import exposure, morphology
 from scipy.ndimage import rotate, interpolation, binary_fill_holes
-from skimage.color import rgb2hsv, rgb2gray
+from skimage.color import rgb2hsv, rgb2gray, rgb2lab
 import random
 from skimage.filters import sobel, gaussian
 from skimage.measure import label
-from skimage.morphology import convex_hull_image, watershed
+from skimage.morphology import convex_hull_image, watershed, binary_erosion, binary_dilation
 from skimage import  segmentation
+from skimage.filters import threshold_otsu
 from time import gmtime, strftime
 
 """
@@ -251,56 +252,57 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
 def threshold(imageMat, classNum):
+    darkClasses = ['2','3','4','6','12','15',]
+    lightClasses = ['1','5','10','11','21','22','23','24','25']
 
-    fuzzyClasses = ['6','7','8','12']
-    glassClasses = ['9','10','13','16','17','18']
-    darkClasses = ['1','2','3','5','11','14','25','26','27','19','28','29']
-
-
-    if classNum in fuzzyClasses:
-        thresholdFuzzy(imageMat)
-    elif classNum in glassClasses:
-        pass
-    elif classNum in darkClasses:
-        pass
-    else:
-        pass
-
-
-def thresholdFuzzy(imageMat):
-    img = imageMat[0, :, :, :]
-    time = strftime("%H:%M:%S+0000", gmtime())
-
-    r = img[:, :, 0]
+    img = imageMat[0,:,:,:]
+    r = img[:,:,0]
     g = img[:, :, 1]
     b = img[:, :, 2]
     hsv = rgb2hsv(img)
-    h = hsv[:, :, 0]
+    h = hsv[:,:,0]
     s = hsv[:, :, 1]
     v = hsv[:, :, 2]
+    lab = rgb2lab(img)
+    l = lab[:,:,0]
+    a = lab[:, :, 1]
+    b = lab[:, :, 2]
+    edgeImg = sobel(v)
 
+    time = strftime("%H:%M:%S+0000", gmtime())
+    if classNum in darkClasses:
+        totalMask = np.ones(h.shape, int)
+        weakEdgeMask = edgeImg < 0.018
+        nonBorder = segmentation.clear_border(weakEdgeMask)
+        weakEdgeMask[nonBorder==1] = 0
+        totalMask[weakEdgeMask==1] = 0
+        strongEdgeMask = segmentation.clear_border(edgeImg>0.02)
+        totalMask[strongEdgeMask==1] = 1
+        totalMask = binary_erosion(totalMask)
 
-    totalMask = np.ones(h.shape, dtype=int)
+    elif classNum in lightClasses:
+        thresh = threshold_otsu(s)
+        totalMask = s > thresh
 
-    # mask out high hues touching border
-    hMask = np.zeros(h.shape, dtype=int)
-    hMask[h > 0.1] = 1
-    nonBorder = segmentation.clear_border(hMask)
-    hMask[nonBorder == 1] = 0
-    totalMask[hMask == 1] = 0
+    totalMask = binary_fill_holes(totalMask)
+    # keep only largest region
+    labelImg = label(totalMask)
+    highestVal = 0
+    highestLabel = 1
+    for i in range(1, labelImg.max() + 1):
+        thisCount = len(labelImg[labelImg == i])
+        if thisCount > highestVal:
+            highestVal = thisCount
+            highestLabel = i
+    totalMask[labelImg != highestLabel] = 0
+    totalMask = convex_hull_image(totalMask)
 
-    rgRatio = r/g
-    rgRatio[rgRatio>1.6] = 1
-    rgRatio[rgRatio!=1] = 0
-    nonBorder = segmentation.clear_border(rgRatio)
-    rgRatio[nonBorder==1] = 0
-    totalMask[rgRatio==1] = 0
+    img[totalMask == 0] = 0
+    if classNum in darkClasses:
+        imsave("dark/"+time+".png", img)
+    else:
+        imsave("light/" + time + ".png", img)
 
-    imsave("orig.png", img)
-    img[totalMask==0] = 0
-    imsave("./fuzzy/" + time + ".png", img)
-    imsave("test.png", b)
-    print("fuzzy")
 
 """
 Used to modify a augment a single image
