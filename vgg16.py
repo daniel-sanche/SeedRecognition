@@ -322,7 +322,7 @@ if __name__ == "__main__":
     saveInterval = float("inf")
 
     i = 0
-    index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
+    index = DataLoader.generatedDatasetParser(imageDir)
     for imageBatch, classBatch in DataLoader.batchLoader(imageDir, index, batchSize=batchSize):
         result = vgg.train(imageBatch, classBatch.reshape([batchSize,]))
         result = (result[0], classBatch.reshape([batchSize]), result[1], result[2])

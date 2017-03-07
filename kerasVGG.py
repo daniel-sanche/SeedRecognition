@@ -135,7 +135,7 @@ if __name__ == "__main__":
     #vggModel.launch_server("/home/sanche/Datasets/Seed_Test/p1_45_first")
 
     i=0
-    index = DataLoader.indexReader(os.path.join(imageDir, 'index.tsv'))
+    index = DataLoader.generatedDatasetParser(imageDir)
     batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(imageDir, index, batchSize=batchSize))
     vggModel.train(batchGenerator)
     vggModel.save(checkpointName)

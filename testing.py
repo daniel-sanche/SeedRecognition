@@ -13,16 +13,12 @@ if __name__ == "__main__":
 
     filesCount = 0
     successCount = 0.0
-    for dirNum in range(1,7):
-        thisDir = "p" + str(dirNum) + "_45_first"
-        print(thisDir)
-        imageDir = os.path.join(imageRoot, thisDir)
-        fileReader = DataLoader.groundTruthReader(os.path.join(imageDir, 'p'+str(dirNum)+'_groundtruth.txt'))
-        batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(imageDir, fileReader, batchSize=batchSize))
-        for imageBatch, classBatch in batchGenerator:
-            loss, acc = vgg.test(imageBatch, classBatch)
-            result = (loss, acc)
-            print("loss: %s acc: %f" % result)
-            filesCount += batchSize
-            successCount += (batchSize * acc)
+    fileReader = DataLoader.segmentedDatasetParser(imageRoot)
+    batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(fileReader, batchSize=batchSize))
+    for imageBatch, classBatch in batchGenerator:
+        loss, acc = vgg.test(imageBatch, classBatch)
+        result = (loss, acc)
+        print("loss: %s acc: %f" % result)
+        filesCount += batchSize
+        successCount += (batchSize * acc)
     print ("total acc: %f in %d files" % (successCount/filesCount, filesCount))
