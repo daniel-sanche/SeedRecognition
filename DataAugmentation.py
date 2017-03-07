@@ -253,7 +253,7 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     yMax = yMin + imageMat.shape[2]
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
-def threshold(imageMat, classNum):
+def segment(imageMat, classNum, backgroundColor=0):
     darkClasses = ['2','3','4','6','12','15',]
     lightClasses = ['1','5','10','11','21','22','23','24','25']
 
@@ -272,7 +272,6 @@ def threshold(imageMat, classNum):
     b = lab[:, :, 2]
     edgeImg = sobel(v)
 
-    time = strftime("%H:%M:%S+0000", gmtime())
     if classNum in darkClasses:
         totalMask = np.ones(h.shape, int)
         redMask = rbRatio > 2.5
@@ -307,19 +306,20 @@ def threshold(imageMat, classNum):
     totalMask[labelImg != highestLabel] = 0
 
     totalMask = convex_hull_image(totalMask)
-    img[totalMask == 0] = 0
+    img[totalMask == 0] = backgroundColor
 
 
 """
 Used to modify a augment a single image
 """
 def ModifyImage(img, classNum, seed=None,
+                segmentProb=0.8, segmentBackgroundRange=[0.1, 0.9],
                 mirrorLRProb=0.5, mirrorUDProb=0.5,
                 rotationRange=[0,1],
                 contrastProb=0.3, contrastMeanRange=[0.2, 0.6], contrastSpreadRange=[0.3, 0.5],
                 rGammaProb=0.3, gGammaProb=0.3, bGammaProb=0.3,
                 shrinkProb=0.3, shrinkRange=[0.5, 1],
-                translateProb=0.5, translateXRange=[-1,1], translateYRange=[-1,1],
+                translateProb=0.5, translateXRange=[-0.75,0.75], translateYRange=[-0.75,0.75],
                 lightingProb=0.2, lightingRadRange=[0.9, 1.3], lightingXRange=[-0.5,0.5], lightingYRange=[-0.5,0.5],
                 noiseProb=0.4, noiseMeanRange=[0.4, 0.6], noiseStdRange=[0.02,0.04]):
     #set up seed
@@ -336,8 +336,9 @@ def ModifyImage(img, classNum, seed=None,
     #inisitalize transform dict
     logDict = {"seedVal":seed}
 
-    #threshold the image
-    threshold(img, classNum)
+    #segment the image and change the background color
+    if random.random() < segmentProb:
+        segment(img, classNum, random.uniform(segmentBackgroundRange[0], segmentBackgroundRange[1]))
 
     #add mirrored versions to the base images
     img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=logDict)

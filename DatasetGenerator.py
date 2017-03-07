@@ -196,5 +196,5 @@ if __name__ == "__main__":
         imgLoader = rawImageLoader(dataset_path, thisFile, [224, 224, 3])
         augmentor = imageAugmentor(imgLoader)
         print(datetime.now().time())
-        generatedImageSaver(augmentor, numImages=10000, imageDir="ThresholdedImages_Bin"+str(idx+1))
+        generatedImageSaver(augmentor, numImages=10000, imageDir="SegmentedTraining_Bin"+str(idx+1))
         print(datetime.now().time())
