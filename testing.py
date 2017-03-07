@@ -5,7 +5,7 @@ import numpy as np
 
 if __name__ == "__main__":
     checkpointName = "./keras_checkpoint.h5"
-    genPath = "./GeneratedImages_Bin2"
+    genPath = "./Generated_Bin2"
     segPath = "/home/sanche/Datasets/Seed_Test_Segmented"
     testPath = "/home/sanche/Datasets/Seed_Test"
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         fileCount = 270
         parser = DataLoader.segmentedDatasetParser(dataset)
     else:
-        fileCount = 1400
+        fileCount = 1000
         parser = DataLoader.testDatasetParser(dataset)
 
     batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(parser, batchSize=1))

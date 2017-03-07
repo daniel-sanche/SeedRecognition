@@ -100,7 +100,7 @@ class VGG:
         self.model.save_weights(path, True)
 
     def train(self, batchGenerator, epochSize=10000,numEpochs=1):
-        self.model.fit_generator(batchGenerator, samples_per_epoch=epochSize, nb_epoch=1, verbose=True)
+        self.model.fit_generator(batchGenerator, samples_per_epoch=epochSize, nb_epoch=numEpochs, verbose=1)
 
     def predict(self, imageMat, probabilities=False):
         if probabilities:
@@ -139,6 +139,7 @@ if __name__ == "__main__":
     i=0
     parser = DataLoader.generatedDatasetParser(datasetDir)
     batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(parser, batchSize=batchSize))
+
     while True:
         vggModel.train(batchGenerator, epochSize=datasetSize)
         vggModel.save(checkpointName)
