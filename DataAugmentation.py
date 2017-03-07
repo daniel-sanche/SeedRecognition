@@ -259,6 +259,7 @@ def threshold(imageMat, classNum):
     r = img[:,:,0]
     g = img[:, :, 1]
     b = img[:, :, 2]
+    rbRatio = r/b
     hsv = rgb2hsv(img)
     h = hsv[:,:,0]
     s = hsv[:, :, 1]
@@ -272,6 +273,10 @@ def threshold(imageMat, classNum):
     time = strftime("%H:%M:%S+0000", gmtime())
     if classNum in darkClasses:
         totalMask = np.ones(h.shape, int)
+        redMask = rbRatio > 2.5
+        blueMask = rbRatio < 0.8
+        rbMask = redMask | blueMask
+        totalMask[rbMask == 1] = 0
         weakEdgeMask = edgeImg < 0.018
         nonBorder = segmentation.clear_border(weakEdgeMask)
         weakEdgeMask[nonBorder==1] = 0
@@ -279,6 +284,9 @@ def threshold(imageMat, classNum):
         strongEdgeMask = segmentation.clear_border(edgeImg>0.02)
         totalMask[strongEdgeMask==1] = 1
         totalMask = binary_erosion(totalMask)
+
+        v[totalMask == 0] = 0
+        totalMask[v > 0.7] = 0
 
     elif classNum in lightClasses:
         thresh = threshold_otsu(s)
@@ -295,13 +303,9 @@ def threshold(imageMat, classNum):
             highestVal = thisCount
             highestLabel = i
     totalMask[labelImg != highestLabel] = 0
-    totalMask = convex_hull_image(totalMask)
 
+    totalMask = convex_hull_image(totalMask)
     img[totalMask == 0] = 0
-    if classNum in darkClasses:
-        imsave("dark/"+time+".png", img)
-    else:
-        imsave("light/" + time + ".png", img)
 
 
 """
