@@ -1,15 +1,14 @@
 import numpy as np
-from scipy.misc import imresize, imsave
-from skimage import exposure, morphology
+from scipy.misc import imresize
+from skimage import exposure
 from scipy.ndimage import rotate, interpolation, binary_fill_holes
-from skimage.color import rgb2hsv, rgb2gray, rgb2lab
+from skimage.color import rgb2hsv
 import random
-from skimage.filters import sobel, gaussian
+from skimage.filters import sobel
 from skimage.measure import label
-from skimage.morphology import convex_hull_image, watershed, binary_erosion, binary_dilation
+from skimage.morphology import convex_hull_image, binary_erosion
 from skimage import  segmentation
 from skimage.filters import threshold_otsu
-from time import gmtime, strftime
 
 """
 applies a gamma transformation to color channels
