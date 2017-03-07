@@ -84,7 +84,7 @@ Returns:
 """
 def addLighting(imageMat, radPercent=1.1, centerX=0, centerY=0, logDict=None):
     if logDict is not None:
-        logDict["LightingCenter"] = "(" + "{:.3f}".format(centerX) + "," + "{:.3f}".format(centerY) + ")"
+        logDict["LightingCenter"] = "({:.3f},{:.3f})".format(centerX, centerY)
         logDict["LightingRadius"] = radPercent
 
     largerSide = max(imageMat.shape[1], imageMat.shape[2])
@@ -233,7 +233,7 @@ Returns:
 """
 def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     if logDict is not None:
-        logDict["TranslateDelta"] = "(" + "{:.3f}".format(xDelta) + "," + "{:.3f}".format(yDelta) + ")"
+        logDict["TranslateDelta"] = "({:.3f},{:.3f})".format(xDelta, yDelta)
 
     #add padding to shift the center point
     xVal = int(round((imageMat.shape[1] * abs(xDelta))))
@@ -253,23 +253,31 @@ def translate(imageMat, xDelta=0.5, yDelta=0.5, logDict=None):
     yMax = yMin + imageMat.shape[2]
     return resultMat[:,xMin:xMax, yMin:yMax,:]
 
-def segment(imageMat, classNum, backgroundColor=0):
+"""
+Segments the seed out from the background, and sets a new background color
+Background color is a grayscale between 0 and 1
+
+Params:
+    imageMat:           the numpy array of images to translate
+    classNum:           the class of the seed, to help with segmenting
+    backgroundColor:    a value between 0 and 1 to replace the background with
+    logDict:            a dictionary of transformations done on image that we can add to
+"""
+def segment(imageMat, classNum, backgroundColor=0, logDict=None):
+    if logDict is not None:
+        logDict["BackgroundColor"] = "{:.3f}".format(backgroundColor)
+
     darkClasses = ['2','3','4','6','12','15',]
     lightClasses = ['1','5','10','11','21','22','23','24','25']
 
     img = imageMat[0,:,:,:]
     r = img[:,:,0]
-    g = img[:, :, 1]
     b = img[:, :, 2]
     rbRatio = r/b
     hsv = rgb2hsv(img)
     h = hsv[:,:,0]
     s = hsv[:, :, 1]
     v = hsv[:, :, 2]
-    lab = rgb2lab(img)
-    l = lab[:,:,0]
-    a = lab[:, :, 1]
-    b = lab[:, :, 2]
     edgeImg = sobel(v)
 
     if classNum in darkClasses:
@@ -338,12 +346,12 @@ def ModifyImage(img, classNum, seed=None,
 
     #segment the image and change the background color
     if random.random() < segmentProb:
-        segment(img, classNum, random.uniform(segmentBackgroundRange[0], segmentBackgroundRange[1]))
+        segment(img, classNum, random.uniform(segmentBackgroundRange[0], segmentBackgroundRange[1]), logDict=logDict)
 
     #add mirrored versions to the base images
     img = mirrorImage(img, random.random()<mirrorLRProb,random.random()<mirrorUDProb, logDict=logDict)
     #assign random rotations to the base images
-    img = rotateImage(img, random.uniform(rotationRange[0], rotationRange[1]))
+    img = rotateImage(img, random.uniform(rotationRange[0], rotationRange[1]), logDict=logDict)
 
     #adjust contrast in subset of images
     if random.random() < contrastProb:
