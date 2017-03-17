@@ -15,7 +15,9 @@ from flask import jsonify
 import h5py
 import os
 import DataLoader
+from keras import metrics
 from keras.utils.np_utils import to_categorical
+import functools
 
 # build the VGG16 network
 class VGG:
@@ -66,9 +68,16 @@ class VGG:
 
         #opt = optimizers.Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         opt = optimizers.SGD(lr=1e-4)
+        top3 = functools.partial(metrics.top_k_categorical_accuracy, k=3)
+        top3.__name__ = 'top3'
+        top5 = functools.partial(metrics.top_k_categorical_accuracy, k=5)
+        top5.__name__ = 'top5'
+        top10 = functools.partial(metrics.top_k_categorical_accuracy, k=10)
+        top10.__name__ = 'top10'
+
         model.compile(optimizer=opt,
                       loss='categorical_crossentropy',
-                      metrics=['accuracy'])
+                      metrics=['accuracy',top3,top5, top10])
         self.model = model
         self.numClasses = numClasses
 
