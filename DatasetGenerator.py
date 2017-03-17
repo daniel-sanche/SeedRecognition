@@ -193,7 +193,10 @@ if __name__ == "__main__":
 
     createFileBins(dataset_path, dirBaseName=dirBaseName, num_Bins=numBins)
     for i in range(1, numBins+1):
-        binDir = dirBaseName+str(i)
+        if numBins > 1:
+            binDir = dirBaseName+str(i)
+        else:
+            binDir = dirBaseName
         imgLoader = rawImageLoader(dataset_path, binDir, imageSize=imageSize)
         augmentor = imageAugmentor(imgLoader)
         print(datetime.now().time())
