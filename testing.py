@@ -9,6 +9,8 @@ if __name__ == "__main__":
     segPath = "/home/sanche/Datasets/Seed_Test_Segmented"
     testPath = "/home/sanche/Datasets/Seed_Test"
 
+    print(checkpointName);
+
     vgg = VGG()
     vgg.loadWeights(checkpointName, None)
     dataset = testPath
@@ -17,10 +19,10 @@ if __name__ == "__main__":
         fileCount = len([name for name in os.listdir(dataset) if ".png" in name])
         parser = DataLoader.generatedDatasetParser(dataset)
     elif dataset == segPath:
-        fileCount = 270
+        fileCount = 250
         parser = DataLoader.segmentedDatasetParser(dataset)
     else:
-        fileCount = 1000
+        fileCount = 12500
         parser = DataLoader.testDatasetParser(dataset)
 
     batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(parser, batchSize=1))

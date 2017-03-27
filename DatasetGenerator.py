@@ -186,9 +186,9 @@ def generatedImageSaver(imageGenerator, numImages=100, imageDir="./GeneratedImag
 #file lists contain the path to an image, and it's class name
 if __name__ == "__main__":
     dataset_path = "/home/sanche/Datasets/Seed_Raw"
-    dirBaseName="Generated_Bin"
-    numBins=2
-    numImagesPerBin = 10000
+    dirBaseName="New_Generated"
+    numBins=1
+    numImagesPerBin = 100000
     imageSize = [224, 224, 3]
 
     createFileBins(dataset_path, dirBaseName=dirBaseName, num_Bins=numBins)
