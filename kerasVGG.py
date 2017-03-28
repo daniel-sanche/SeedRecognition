@@ -18,6 +18,8 @@ import DataLoader
 from keras import metrics
 from keras.utils.np_utils import to_categorical
 import functools
+from math import ceil
+import pandas as pd
 
 # build the VGG16 network
 class VGG:
@@ -116,14 +118,37 @@ class VGG:
             results = self.model.predict(imageMat, batch_size=imageMat.shape[0], verbose=0)
         else:
             results = self.model.predict_classes(imageMat, batch_size=imageMat.shape[0], verbose=0)
-        print(results)
         return results
 
-    def test(self, batchGenerator, numImages):
+    def test(self, datasetGenerator, numImages):
+        batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(datasetGenerator, batchSize=1))
         results = self.model.evaluate_generator(batchGenerator, numImages)
         print("testing complete")
         for i in range(len(results)):
             print("\t{}: {}".format(self.model.metrics_names[i], results[i]))
+
+    def covarianceMatrix(self, datasetGenerator, numImages, savePath="./covariance_matrix.csv"):
+        batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(datasetGenerator, batchSize=16))
+        numBatches = int(ceil(numImages/16.0))
+        resultDict = {}
+        for i in range(numBatches):
+            imgMat, labMat = next(batchGenerator)
+            predMat = self.predict(imgMat, False)
+            for j in range(16):
+                truth = np.argmax(labMat[j])
+                guess = predMat[j]
+                oldInner = resultDict.get(truth, {})
+                oldInner[guess] = oldInner.get(guess, 0) + 1
+                resultDict[truth] = oldInner
+        df = pd.DataFrame.from_dict(resultDict)
+        df.index.name = "predictions"
+        df.to_csv(savePath)
+        return df
+
+
+
+
+
 
     def launch_server(self, imgFolder="GeneratedImages_Bin2"):
         names = ['bc', 'bj', 'bn', 'sa', 'bry', 'brb',  'cm', 'cst', 'cso', 'sl',\
