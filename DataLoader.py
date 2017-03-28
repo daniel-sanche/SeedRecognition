@@ -29,7 +29,7 @@ def generatedDatasetParser(folderPath):
 
 """
 loads file and class information from the index file in the segmented image directory
-when all files have been loaded, generator stops
+generator will keep loading files in order infinitely
 
 Params:
     rootDir:   the root path of the segmenteeed images we want to load
@@ -42,23 +42,24 @@ Yeilds:
 """
 def segmentedDatasetParser(rootDir):
     print("loading data from %s" % rootDir)
-    for dirNum in range(1, 7):
-        dirName = "p" + str(dirNum) + "_45_first"
-        dirPath = os.path.join(rootDir, dirName)
-        indexName = 'p' + str(dirNum) + '_groundtruth.txt'
-        indexPath = os.path.join(dirPath, indexName)
-        with open(indexPath, 'r') as f:
-            for thisLine in f:
-                thisLine = thisLine.rstrip().split()
-                fileName = thisLine[0].zfill(6) + ".png"
-                className = thisLine[2]
-                filePath = os.path.join(dirPath, fileName)
-                if os.path.exists(filePath):
-                    yield filePath, className
+    while True:
+        for dirNum in range(1, 7):
+            dirName = "p" + str(dirNum) + "_45_first"
+            dirPath = os.path.join(rootDir, dirName)
+            indexName = 'p' + str(dirNum) + '_groundtruth.txt'
+            indexPath = os.path.join(dirPath, indexName)
+            with open(indexPath, 'r') as f:
+                for thisLine in f:
+                    thisLine = thisLine.rstrip().split()
+                    fileName = thisLine[0].zfill(6) + ".png"
+                    className = thisLine[2]
+                    filePath = os.path.join(dirPath, fileName)
+                    if os.path.exists(filePath):
+                        yield filePath, className
 
 """
 loads file and class information from the testing image directory
-when all files have been loaded, generator stops
+generator will keep loading files in order infinitely
 
 Params:
     rootDir:   the root path of the segmenteeed images we want to load
@@ -71,42 +72,43 @@ Yeilds:
 """
 def testDatasetParser(rootDir):
     print("loading data from %s" % rootDir)
-    for dirNum in range(1, 7):
-        dirName = "p" + str(dirNum) + "_45_first"
-        dirPath = os.path.join(rootDir, dirName)
-        indexName = 'p' + str(dirNum) + '_groundtruth.txt'
-        indexPath = os.path.join(dirPath, indexName)
-        with open(indexPath, 'r') as f:
-            for thisLine in f:
-                thisLine = thisLine.rstrip().split()
-                className = thisLine[2]
-                folderName = thisLine[0].zfill(6)
-                folderPath = os.path.join(dirPath, folderName)
-                if os.path.exists(folderPath):
-                    for imgFile in os.listdir(folderPath):
-                        if ".png" in imgFile:
-                            imgPath = os.path.join(folderPath, imgFile)
-                            yield imgPath, className
+    while True:
+        for dirNum in range(1, 7):
+            dirName = "p" + str(dirNum) + "_45_first"
+            dirPath = os.path.join(rootDir, dirName)
+            indexName = 'p' + str(dirNum) + '_groundtruth.txt'
+            indexPath = os.path.join(dirPath, indexName)
+            with open(indexPath, 'r') as f:
+                for thisLine in f:
+                    thisLine = thisLine.rstrip().split()
+                    className = thisLine[2]
+                    folderName = thisLine[0].zfill(6)
+                    folderPath = os.path.join(dirPath, folderName)
+                    if os.path.exists(folderPath):
+                        for imgFile in os.listdir(folderPath):
+                            if ".png" in imgFile:
+                                imgPath = os.path.join(folderPath, imgFile)
+                                yield imgPath, className
 
 """
 loads batches of images from the generated images directory
 
 Params:
     imageDir:       the directory of the generated images
-    indexReader:    an index generator, that yeilds file names and class values
+    dataParser:     an index parsergenerator, that yeilds file names and class values
     batchSize:      the number of images in each batch
     imageSize:      the size of the images being extracted
 Yields:
     [0]:    a numpy matrix containing a batch of images
     [1]:    a numpy array of label values for each image
 """
-def batchLoader(indexReader, imageSize=224, batchSize=64):
+def batchLoader(dataParser, imageSize=224, batchSize=64):
     #find the file size
     while True:
         thisBatch = np.zeros([batchSize, imageSize, imageSize, 3])
         labelBatch = np.zeros([batchSize, 1], dtype=int)
         for i in range(batchSize):
-            filePath, classVal = next(indexReader)
+            filePath, classVal = next(dataParser)
             thisImage = imread(filePath)
             if thisImage.shape[0] != imageSize or thisImage.shape[1] != imageSize:
                 thisImage = imresize(thisImage, (imageSize, imageSize))
