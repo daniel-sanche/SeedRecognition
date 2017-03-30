@@ -3,7 +3,12 @@ import random
 import numpy as np
 from scipy.misc import imread, imresize
 from keras.utils.np_utils import to_categorical
+from DatasetGenerator import rawImageLoader
 
+def rawImageParser(datasetPath, binPath):
+	gen = rawImageLoader(datasetPath, binPath)
+	for _, classNum, suffix in gen:
+		yield os.path.join(datasetPath, suffix), classNum
 
 """
 loads file and class information from the index file in the generated image directory
