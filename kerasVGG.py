@@ -145,7 +145,33 @@ class VGG:
         df.to_csv(savePath)
         return df
 
-
+    def topNPerClass(self, datasetGenerator, numImages, nList=[1,3,5], savePath="./topN.csv"):
+        batchGenerator = DataLoader.oneHotWrapper(DataLoader.batchLoader(datasetGenerator, batchSize=16))
+        numBatches = int(ceil(numImages / 16.0))
+        successCount = {}
+        totalCount = {}
+        percentCount = {}
+        for i in range(numBatches):
+            imgMat, labMat = next(batchGenerator)
+            predMat = self.predict(imgMat, True)
+            for j in range(16):
+                truth = np.argmax(labMat[j])
+                for n in nList:
+                    thisNSuccess = successCount.get(n, {})
+                    topN = np.argpartition(-predMat[j], n)[:n]
+                    if truth in topN:
+                        thisNSuccess[truth] = thisNSuccess.get(truth, 0) + 1
+                        successCount[n] = thisNSuccess
+                totalCount[truth] = totalCount.get(truth, 0) + 1
+        #find the percentages
+        for key in totalCount:
+            for n in nList:
+                thisNPercent = percentCount.get(n, {})
+                thisNPercent[key] = float((successCount.get(n, {})).get(key, 0.0)) / totalCount.get(key, 0.0)
+                percentCount[n] = thisNPercent
+        df = pd.DataFrame.from_dict(percentCount)
+        df.to_csv(savePath)
+        return df
 
 
 
